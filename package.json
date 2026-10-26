@@ -1,0 +1,15 @@
+{
+  "name": "ev-inventory-api",
+  "version": "1.0.0",
+  "description": "Starter Express.js API for electric vehicle inventory using a local JSON file.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {}
+}
