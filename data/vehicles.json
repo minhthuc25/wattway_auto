@@ -1,0 +1,13 @@
+{
+  "id": "ev-001",
+  "make": "Tesla",
+  "model": "Model 3",
+  "year": 2025,
+  "price": 48990,
+  "condition": "new",
+  "trim": "Long Range AWD",
+  "color": "Pearl White",
+  "rangeKm": 550,
+  "batteryKwh": 75,
+  "available": true
+}
