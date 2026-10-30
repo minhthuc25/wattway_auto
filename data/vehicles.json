@@ -1,6 +1,6 @@
 [
   {
-    "id": "ev-001",
+    "id": 1,
     "make": "Tesla",
     "model": "Model 3",
     "year": 2025,
@@ -10,6 +10,6 @@
     "color": "Pearl White",
     "rangeKm": 550,
     "batteryKwh": 75,
-    "available": true
+    "quantity": 1
   }
 ]
