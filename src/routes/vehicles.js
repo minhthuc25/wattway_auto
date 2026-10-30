@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.put('/:id', async (req, res, next) => {
+router.patch('/:id', async (req, res, next) => {
   try {
     const result = validateVehicle(req.body, false);
     if (result) return res.status(400).json({ error: result });
@@ -96,7 +96,8 @@ function validateVehicle(body, creating) {
   if (body.price !== undefined && (!Number.isFinite(Number(body.price)) || Number(body.price) < 0)) return 'price must be a non-negative number';
   if (body.rangeKm !== undefined && (!Number.isFinite(Number(body.rangeKm)) || Number(body.rangeKm) < 0)) return 'rangeKm must be a non-negative number';
   if (body.batteryKwh !== undefined && (!Number.isFinite(Number(body.batteryKwh)) || Number(body.batteryKwh) < 0)) return 'batteryKwh must be a non-negative number';
-  if (body.available !== undefined && typeof body.available !== 'boolean') return 'available must be a boolean';
+  if (body.quantity !== undefined && (!Number.isInteger(Number(body.quantity)) || Number(body.quantity) < 0)) return 'quantity must be a non-negative integer';
+  if (body.available !== undefined) return 'available is derived from quantity and cannot be set';
   if (body.condition !== undefined && !['new', 'used'].includes(body.condition)) return 'condition must be "new" or "used"';
 
   return null;
