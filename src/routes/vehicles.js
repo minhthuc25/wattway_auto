@@ -101,3 +101,5 @@ function validateVehicle(body, creating) {
 
   return null;
 }
+
+export default router;
