@@ -33,19 +33,28 @@ npm run db:reset
 | GET | `/api/users/me` | Logged in | Get your own account |
 | POST | `/api/sessions` | Public | Log in; returns a session token |
 | DELETE | `/api/sessions/current` | Logged in | Log out |
-| GET | `/api/vehicles` | Public | List vehicles |
-| GET | `/api/vehicles?make=Tesla` | Public | Filter by make |
-| GET | `/api/vehicles?condition=used&available=true` | Public | Filter by condition and availability |
-| GET | `/api/vehicles?year=2024&bodyType=suv` | Public | Filter by model year and body type |
-| GET | `/api/vehicles?hasAccidents=false` | Public | Filter by accident history |
-| GET | `/api/vehicles?sort=price&order=desc` | Public | Sort by `price` or `mileageKm`, `asc` (default) or `desc` |
-| GET | `/api/vehicles?search=model%203` | Public | Search make/model/trim/year/description |
+| GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted (see below) |
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
 
-Filters and sorting can be combined, e.g. `/api/vehicles?condition=used&hasAccidents=false&sort=mileageKm`.
+### Listing parameters
+
+All parameters are optional and can be combined, e.g. `/api/vehicles?condition=used&hasAccidents=false&sort=mileageKm`.
+
+| Parameter | Values | Matches |
+|---|---|---|
+| `search` | any text | Text found anywhere in make, model, trim, year or description, e.g. `search=model%203` |
+| `make` | e.g. `Tesla` | Exact make, not case-sensitive |
+| `model` | e.g. `Model` | Model containing the text, not case-sensitive |
+| `condition` | `new`, `used` | Condition |
+| `available` | `true`, `false` | In stock (`quantity` > 0) or not |
+| `year` | e.g. `2024` | Exact model year |
+| `bodyType` | e.g. `suv`, `sedan` | Exact body type, not case-sensitive |
+| `hasAccidents` | `true`, `false` | With or without reported accidents |
+| `sort` | `price`, `mileageKm` | Sort by this field |
+| `order` | `asc`, `desc` | Sort direction |
 
 ## Authentication
 
