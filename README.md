@@ -1,4 +1,4 @@
-# EV Inventory API
+# York University - EECS 4413 - Group G - Inventory API
 
 A small Express.js REST API for an electric-vehicle inventory. Data is stored in PostgreSQL using [PGlite](https://pglite.dev).
 
