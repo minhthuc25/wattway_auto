@@ -1,6 +1,6 @@
 # EV Inventory API
 
-A small Express.js REST API for an electric-vehicle inventory. Data is stored in PostgreSQL using [PGlite](https://pglite.dev), which runs inside the Node process, so there is no database server to install.
+A small Express.js REST API for an electric-vehicle inventory. Data is stored in PostgreSQL using [PGlite](https://pglite.dev).
 
 ## Requirements
 

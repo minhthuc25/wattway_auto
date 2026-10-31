@@ -74,7 +74,7 @@ router.delete('/:id', requireAdmin, async (req, res, next) => {
 function validateVehicle(body, creating) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
 
-  // rangeKm and batteryKwh are required because the savings calculator derives efficiency from them.
+  // rangeKm and batteryKwh are required because the savings calculator uses them.
   const required = ['make', 'model', 'year', 'price', 'rangeKm', 'batteryKwh'];
   if (creating) {
     for (const field of required) {

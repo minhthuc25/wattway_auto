@@ -3,13 +3,13 @@ CREATE TABLE vehicles (
   make           TEXT    NOT NULL,
   model          TEXT    NOT NULL,
   year           INTEGER NOT NULL CHECK (year >= 1886),
-  price          INTEGER NOT NULL CHECK (price >= 0),          -- whole dollars
+  price          INTEGER NOT NULL CHECK (price >= 0),
   condition      TEXT    NOT NULL DEFAULT 'new' CHECK (condition IN ('new', 'used')),
   trim           TEXT    NOT NULL DEFAULT '',
   color          TEXT    NOT NULL DEFAULT '',
-  body_type      TEXT    NOT NULL DEFAULT '',                  -- sedan, suv, hatchback, truck, ...
+  body_type      TEXT    NOT NULL DEFAULT '',
   range_km       INTEGER NOT NULL CHECK (range_km > 0),
-  battery_kwh    REAL    NOT NULL CHECK (battery_kwh > 0),     -- with range_km, gives efficiency for the savings calculator
+  battery_kwh    REAL    NOT NULL CHECK (battery_kwh > 0),
   mileage_km     INTEGER NOT NULL DEFAULT 0 CHECK (mileage_km >= 0),
   has_accidents  BOOLEAN NOT NULL DEFAULT FALSE,
   history_report TEXT    NOT NULL DEFAULT '',

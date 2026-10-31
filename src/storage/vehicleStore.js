@@ -1,6 +1,6 @@
 import { db } from './db.js';
 
-// API field name -> database column. Only these fields can be written by clients.
+// API field name -> database column.
 const COLUMNS = {
   make: 'make',
   model: 'model',
@@ -21,7 +21,7 @@ const COLUMNS = {
 };
 
 // Columns returned for a vehicle, renamed to the API's camelCase field names.
-// `available` is derived from stock instead of stored, so the two can never disagree.
+// `available` is derived from stock.
 const VEHICLE_FIELDS = [
   'id',
   ...Object.entries(COLUMNS).map(([field, column]) => `${column} AS "${field}"`),
@@ -30,7 +30,7 @@ const VEHICLE_FIELDS = [
   'updated_at AS "updatedAt"',
 ].join(', ');
 
-// Returns the vehicle id as an integer, or null if it cannot be one (so lookups just find nothing).
+// Returns the vehicle id as an integer, or null if it cannot be one.
 function toId(id) {
   return /^\d{1,9}$/.test(String(id)) ? Number(id) : null;
 }

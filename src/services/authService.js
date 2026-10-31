@@ -49,6 +49,7 @@ export async function login(username, password) {
   const account = await findUserByUsername(normalizeUsername(username));
   if (!account || !(await verifyPassword(password, account.passwordHash))) return null;
 
+  // Remove rows from the session table that represent expired sessions before adding a new one
   await deleteExpiredSessions();
   const token = randomBytes(32).toString('hex');
   await createSession(hashToken(token), account.id);
