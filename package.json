@@ -1,15 +1,16 @@
 {
   "name": "ev-inventory-api",
   "version": "1.0.0",
-  "description": "Starter Express.js API for electric vehicle inventory using a local JSON file.",
+  "description": "Express.js API for electric vehicle inventory backed by an embedded PostgreSQL database (PGlite).",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "db:reset": "node -e \"require('node:fs').rmSync('db/pgdata', { recursive: true, force: true })\""
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.13",
     "express": "^5.1.0"
-  },
-  "devDependencies": {}
+  }
 }

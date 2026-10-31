@@ -19,6 +19,10 @@ app.use((_req, res) => {
 
 // Basic error handler.
 app.use((err, _req, res, _next) => {
+  // Client errors raised by Express itself (e.g. malformed JSON) are marked safe to show.
+  if (err.expose && err.status < 500) return res.status(err.status).json({ error: err.message });
+  // PostgreSQL data (22xxx) and constraint (23xxx) errors mean a value in the request was rejected, e.g. a number too large.
+  if (/^2[23]/.test(err.code)) return res.status(400).json({ error: 'Invalid value in request' });
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });

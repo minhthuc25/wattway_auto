@@ -11,22 +11,13 @@ const router = Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const { search, make, model, condition, available } = req.query;
-    let vehicles = await listVehicles();
+    const { year, sort, order } = req.query;
+    if (year !== undefined && !Number.isInteger(Number(year))) return res.status(400).json({ error: 'year must be an integer' });
+    if (sort !== undefined && !['price', 'mileageKm'].includes(sort)) return res.status(400).json({ error: 'sort must be "price" or "mileageKm"' });
+    if (order !== undefined && !['asc', 'desc'].includes(order)) return res.status(400).json({ error: 'order must be "asc" or "desc"' });
 
-    if (search) {
-      const q = String(search).toLowerCase();
-      vehicles = vehicles.filter((v) =>
-        [v.make, v.model, v.trim, v.year, v.description]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(q))
-      );
-    }
-    if (make) vehicles = vehicles.filter((v) => v.make.toLowerCase() === String(make).toLowerCase());
-    if (model) vehicles = vehicles.filter((v) => v.model.toLowerCase().includes(String(model).toLowerCase()));
-    if (condition) vehicles = vehicles.filter((v) => v.condition === condition);
-    if (available !== undefined) vehicles = vehicles.filter((v) => v.available === (String(available) === 'true'));
-
+    // Filtering and sorting happen in the database query.
+    const vehicles = await listVehicles(req.query);
     res.json({ data: vehicles, count: vehicles.length });
   } catch (err) {
     next(err);
@@ -81,7 +72,8 @@ router.delete('/:id', async (req, res, next) => {
 function validateVehicle(body, creating) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
 
-  const required = ['make', 'model', 'year', 'price'];
+  // rangeKm and batteryKwh are required because the savings calculator derives efficiency from them.
+  const required = ['make', 'model', 'year', 'price', 'rangeKm', 'batteryKwh'];
   if (creating) {
     for (const field of required) {
       if (body[field] === undefined || body[field] === null || body[field] === '') {
@@ -93,10 +85,15 @@ function validateVehicle(body, creating) {
   if (body.make !== undefined && (typeof body.make !== 'string' || !body.make.trim())) return 'make must be a non-empty string';
   if (body.model !== undefined && (typeof body.model !== 'string' || !body.model.trim())) return 'model must be a non-empty string';
   if (body.year !== undefined && (!Number.isInteger(Number(body.year)) || Number(body.year) < 1886)) return 'year must be a valid integer';
-  if (body.price !== undefined && (!Number.isFinite(Number(body.price)) || Number(body.price) < 0)) return 'price must be a non-negative number';
-  if (body.rangeKm !== undefined && (!Number.isFinite(Number(body.rangeKm)) || Number(body.rangeKm) < 0)) return 'rangeKm must be a non-negative number';
-  if (body.batteryKwh !== undefined && (!Number.isFinite(Number(body.batteryKwh)) || Number(body.batteryKwh) < 0)) return 'batteryKwh must be a non-negative number';
+  if (body.price !== undefined && (!Number.isInteger(Number(body.price)) || Number(body.price) < 0)) return 'price must be a non-negative integer';
+  if (body.rangeKm !== undefined && (!Number.isInteger(Number(body.rangeKm)) || Number(body.rangeKm) <= 0)) return 'rangeKm must be a positive integer';
+  if (body.batteryKwh !== undefined && (!Number.isFinite(Number(body.batteryKwh)) || Number(body.batteryKwh) <= 0)) return 'batteryKwh must be a positive number';
+  if (body.mileageKm !== undefined && (!Number.isInteger(Number(body.mileageKm)) || Number(body.mileageKm) < 0)) return 'mileageKm must be a non-negative integer';
   if (body.quantity !== undefined && (!Number.isInteger(Number(body.quantity)) || Number(body.quantity) < 0)) return 'quantity must be a non-negative integer';
+  if (body.hasAccidents !== undefined && typeof body.hasAccidents !== 'boolean') return 'hasAccidents must be a boolean';
+  for (const field of ['trim', 'color', 'bodyType', 'historyReport', 'description', 'imageUrl']) {
+    if (body[field] !== undefined && typeof body[field] !== 'string') return `${field} must be a string`;
+  }
   if (body.available !== undefined) return 'available is derived from quantity and cannot be set';
   if (body.condition !== undefined && !['new', 'used'].includes(body.condition)) return 'condition must be "new" or "used"';
 
