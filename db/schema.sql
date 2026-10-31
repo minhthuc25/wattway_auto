@@ -1,6 +1,3 @@
--- WattWay Auto database schema (PostgreSQL).
--- Run automatically on the server's first start; see src/storage/db.js.
-
 CREATE TABLE vehicles (
   id             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   make           TEXT    NOT NULL,
@@ -21,4 +18,20 @@ CREATE TABLE vehicles (
   image_url      TEXT    NOT NULL DEFAULT '',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE users (
+  id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,                       -- stored in lowercase
+  password_hash TEXT NOT NULL,
+  first_name    TEXT NOT NULL,
+  last_name     TEXT NOT NULL,
+  role          TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '24 hours'
 );

@@ -1,4 +1,9 @@
--- Sample inventory loaded on the server's first start.
+-- Sample data loaded on the server's first start.
+
+INSERT INTO users (username, password_hash, first_name, last_name, role)
+VALUES ('admin',
+        '74aa85a753a98168954d20e3e671299a:cbad3106d9c472d88dcc5efa115f893092da251d2b5520ef987517dbf856e7317736322caef3533de448519a4fd25af91b435beead7521701dd95d4609e8d69d',
+        'Store', 'Admin', 'admin');
 
 INSERT INTO vehicles
   (make, model, year, price, condition, trim, color, body_type, range_km, battery_kwh, mileage_km, has_accidents, history_report, quantity, description)

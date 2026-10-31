@@ -6,6 +6,7 @@ import {
   updateVehicle,
   deleteVehicle,
 } from '../storage/vehicleStore.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -34,7 +35,8 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-router.post('/', async (req, res, next) => {
+// Only admins can change the inventory.
+router.post('/', requireAdmin, async (req, res, next) => {
   try {
     const result = validateVehicle(req.body, true);
     if (result) return res.status(400).json({ error: result });
@@ -46,7 +48,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireAdmin, async (req, res, next) => {
   try {
     const result = validateVehicle(req.body, false);
     if (result) return res.status(400).json({ error: result });
@@ -59,7 +61,7 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireAdmin, async (req, res, next) => {
   try {
     const deleted = await deleteVehicle(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Vehicle not found' });
