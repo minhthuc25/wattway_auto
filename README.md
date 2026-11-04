@@ -1,6 +1,6 @@
 # York University - EECS 4413 - Group G - Inventory API
 
-A small Express.js REST API for an electric-vehicle inventory. Data is stored in PostgreSQL using [PGlite](https://pglite.dev).
+A small Express.js REST API for an electric-vehicle inventory. Data is stored in PostgreSQL using PGlite.
 
 ## Requirements
 
@@ -33,13 +33,13 @@ npm run db:reset
 | GET | `/api/users/me` | Logged in | Get your own account |
 | POST | `/api/sessions` | Public | Log in; returns a session token |
 | DELETE | `/api/sessions/current` | Logged in | Log out |
-| GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted (see below) |
+| GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted |
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
 
-### Listing parameters
+### Parameters for Vehicle Listing
 
 All parameters are optional and can be combined, e.g. `/api/vehicles?condition=used&hasAccidents=false&sort=mileageKm`.
 
