@@ -35,14 +35,24 @@ function toId(id) {
   return /^\d{1,9}$/.test(String(id)) ? Number(id) : null;
 }
 
-// Picks the writable fields present in the input, in column order.
-function writableEntries(input) {
-  return Object.keys(COLUMNS)
-    .filter((field) => input[field] !== undefined)
-    .map((field) => {
-      const value = field === 'make' || field === 'model' ? String(input[field]).trim() : input[field];
-      return [COLUMNS[field], value];
-    });
+// Collects the writable fields present in the input as two matching lists:
+// columns[i] is the database column that values[i] is written to.
+// Fields that are missing, or not listed in COLUMNS, are skipped.
+function writableColumns(input) {
+  const columns = [];
+  const values = [];
+
+  for (const [field, column] of Object.entries(COLUMNS)) {
+    if (input[field] === undefined) continue;
+
+    let value = input[field];
+    if (field === 'make' || field === 'model') value = String(value).trim();
+
+    columns.push(column);
+    values.push(value);
+  }
+
+  return { columns, values };
 }
 
 // Escapes LIKE wildcards so a search for "100%" matches the text literally.
@@ -89,12 +99,11 @@ export async function getVehicle(id) {
 }
 
 export async function createVehicle(input) {
-  const entries = writableEntries(input);
-  const columns = entries.map(([column]) => column).join(', ');
-  const placeholders = entries.map((_, i) => `$${i + 1}`).join(', ');
+  const { columns, values } = writableColumns(input);
+  const placeholders = values.map((_, i) => `$${i + 1}`);
   const { rows } = await db.query(
-    `INSERT INTO vehicles (${columns}) VALUES (${placeholders}) RETURNING ${VEHICLE_FIELDS}`,
-    entries.map(([, value]) => value)
+    `INSERT INTO vehicles (${columns.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING ${VEHICLE_FIELDS}`,
+    values
   );
   return rows[0];
 }
@@ -103,12 +112,13 @@ export async function updateVehicle(id, input) {
   const vehicleId = toId(id);
   if (vehicleId === null) return null;
 
-  const entries = writableEntries(input);
-  const assignments = entries.map(([column], i) => `${column} = $${i + 2}`);
+  const { columns, values } = writableColumns(input);
+  // $1 is the vehicle id, so the new values start at $2.
+  const assignments = columns.map((column, i) => `${column} = $${i + 2}`);
   const { rows } = await db.query(
     `UPDATE vehicles SET ${[...assignments, 'updated_at = now()'].join(', ')}
      WHERE id = $1 RETURNING ${VEHICLE_FIELDS}`,
-    [vehicleId, ...entries.map(([, value]) => value)]
+    [vehicleId, ...values]
   );
   return rows[0] ?? null;
 }
