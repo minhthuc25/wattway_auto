@@ -1,13 +1,12 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { createUser, findUserByUsername } from '../storage/userStore.js';
 import {
-  createUser,
-  findUserByUsername,
   createSession,
   findUserBySession,
   deleteSession,
   deleteExpiredSessions,
-} from '../storage/userStore.js';
+} from '../storage/sessionStore.js';
 
 const scryptAsync = promisify(scrypt);
 
