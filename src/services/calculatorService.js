@@ -18,7 +18,7 @@ export function calculateLoan({ price, downPayment, rate, months }) {
   const loanAmount = price - downPayment;
   const monthlyRate = rate / 100 / 12;
 
-  // Standard loan formula: P * r * (1 + r)^n / ((1 + r)^n - 1).
+  // Loan formula: P * r * (1 + r)^n / ((1 + r)^n - 1).
   const monthlyPayment =
     monthlyRate === 0
       ? loanAmount / months

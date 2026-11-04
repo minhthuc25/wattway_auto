@@ -58,7 +58,7 @@ All parameters are optional and can be combined, e.g. `/api/vehicles?condition=u
 | `sort` | `price`, `mileageKm` | Sort by this field |
 | `order` | `asc`, `desc` | Sort direction |
 
-### Parameters for the Savings Calculator
+### Parameters for Savings Calculator
 
 Compares driving the vehicle with driving a gas car the same distance.
 
@@ -71,7 +71,7 @@ Compares driving the vehicle with driving a gas car the same distance.
 
 Returns the yearly energy cost, fuel cost, cost savings and CO2 (kg) for both.
 
-### Parameters for the Loan Calculator
+### Parameters for Loan Calculator
 
 All four are required, e.g. `/api/loan?price=80000&downPayment=20000&rate=6&months=60`.
 
