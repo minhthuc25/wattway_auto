@@ -35,6 +35,8 @@ npm run db:reset
 | DELETE | `/api/sessions/current` | Logged in | Log out |
 | GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted |
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
+| GET | `/api/vehicles/:id/savings?kmPerYear=value` | Public | Yearly cost and CO2 savings compared with a gas car |
+| GET | `/api/loan?price=&downPayment=&rate=&months=` | Public | Monthly payment estimate for a loan |
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
@@ -55,6 +57,32 @@ All parameters are optional and can be combined, e.g. `/api/vehicles?condition=u
 | `hasAccidents` | `true`, `false` | With or without reported accidents |
 | `sort` | `price`, `mileageKm` | Sort by this field |
 | `order` | `asc`, `desc` | Sort direction |
+
+### Parameters for the Savings Calculator
+
+Compares driving the vehicle with driving a gas car the same distance.
+
+| Parameter | Values | Default |
+|---|---|---|
+| `kmPerYear` | Distance driven per year, required | — |
+| `gasCarLPer100Km` | Fuel use of the gas car being compared | `8.5` |
+| `gasPricePerL` | Dollars per litre of gas | `1.55` |
+| `electricityPricePerKwh` | Dollars per kWh for charging | `0.13` |
+
+Returns the yearly energy cost, fuel cost, cost savings and CO2 (kg) for both.
+
+### Parameters for the Loan Calculator
+
+All four are required, e.g. `/api/loan?price=80000&downPayment=20000&rate=6&months=60`.
+
+| Parameter | Values |
+|---|---|
+| `price` | Vehicle price in dollars, greater than 0 |
+| `downPayment` | Dollars, at least 0 and less than `price` |
+| `rate` | Yearly interest rate in percent, (e.g. `6` for 6%) |
+| `months` | Loan duration, a whole number from 1 to 120 |
+
+Returns `loanAmount`, `monthlyPayment` and `totalInterest`.
 
 ## Authentication
 

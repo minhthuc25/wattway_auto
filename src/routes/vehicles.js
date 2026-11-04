@@ -7,6 +7,7 @@ import {
   deleteVehicle,
 } from '../storage/vehicleStore.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { calculateSavings } from '../services/calculatorService.js';
 
 const router = Router();
 
@@ -30,6 +31,29 @@ router.get('/:id', async (req, res, next) => {
     const vehicle = await getVehicle(req.params.id);
     if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
     res.json({ data: vehicle });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Yearly cost and CO2 savings of this vehicle compared with a gas car.
+router.get('/:id/savings', async (req, res, next) => {
+  try {
+    const result = validateSavings(req.query);
+    if (result) return res.status(400).json({ error: result });
+
+    const vehicle = await getVehicle(req.params.id);
+    if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
+
+    // Optional parameters that are left out stay undefined, so the calculator uses its defaults.
+    const toNumber = (value) => (value === undefined ? undefined : Number(value));
+    const savings = calculateSavings(vehicle, {
+      kmPerYear: Number(req.query.kmPerYear),
+      gasCarLPer100Km: toNumber(req.query.gasCarLPer100Km),
+      gasPricePerL: toNumber(req.query.gasPricePerL),
+      electricityPricePerKwh: toNumber(req.query.electricityPricePerKwh),
+    });
+    res.json({ data: savings });
   } catch (err) {
     next(err);
   }
@@ -70,6 +94,17 @@ router.delete('/:id', requireAdmin, async (req, res, next) => {
     next(err);
   }
 });
+
+function validateSavings(query) {
+  if (query.kmPerYear === undefined || query.kmPerYear === '') return 'Missing required parameter: kmPerYear';
+
+  for (const param of ['kmPerYear', 'gasCarLPer100Km', 'gasPricePerL', 'electricityPricePerKwh']) {
+    const value = query[param];
+    if (value !== undefined && !(Number.isFinite(Number(value)) && Number(value) > 0)) return `${param} must be a positive number`;
+  }
+
+  return null;
+}
 
 function validateVehicle(body, creating) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';

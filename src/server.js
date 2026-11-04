@@ -2,6 +2,7 @@ import express from 'express';
 import vehicleRoutes from './routes/vehicles.js';
 import userRoutes from './routes/users.js';
 import sessionRoutes from './routes/sessions.js';
+import loanRoutes from './routes/loan.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +16,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/loan', loanRoutes);
 
 // Consistent JSON response for unknown routes.
 app.use((_req, res) => {
