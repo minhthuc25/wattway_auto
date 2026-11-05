@@ -3,6 +3,8 @@ import vehicleRoutes from './routes/vehicles.js';
 import userRoutes from './routes/users.js';
 import sessionRoutes from './routes/sessions.js';
 import loanRoutes from './routes/loan.js';
+import cartRoutes from './routes/cart.js';
+import checkoutRoutes from './routes/checkout.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +19,8 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/loan', loanRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/checkout', checkoutRoutes);
 
 // Consistent JSON response for unknown routes.
 app.use((_req, res) => {

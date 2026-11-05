@@ -16,7 +16,7 @@ npm run dev
 
 The API runs at `http://localhost:3000`.
 
-On first start the server creates the database in `db/pgdata`. Later starts reuse the same data.
+On first start the server creates and seeds the database in `db/pgdata`. Later starts reuse the data and apply any new tables from `db/schema.sql`.
 
 To go back to the original sample data, stop the server and run:
 
@@ -37,6 +37,12 @@ npm run db:reset
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
 | GET | `/api/vehicles/:id/savings?kmPerYear=value` | Public | Yearly cost and CO2 savings compared with a gas car |
 | GET | `/api/loan?price=&downPayment=&rate=&months=` | Public | Monthly payment estimate for a loan |
+| GET | `/api/cart` | Logged in | View your shopping cart |
+| POST | `/api/cart/items` | Logged in | Add a vehicle and quantity to your cart |
+| PATCH | `/api/cart/items/:vehicleId` | Logged in | Set the quantity of a cart item |
+| DELETE | `/api/cart/items/:vehicleId` | Logged in | Remove a vehicle from your cart |
+| DELETE | `/api/cart` | Logged in | Clear your cart |
+| POST | `/api/checkout` | Logged in | Place an order from your cart |
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
@@ -84,9 +90,59 @@ All four are required, e.g. `/api/loan?price=80000&downPayment=20000&rate=6&mont
 
 Returns `loanAmount`, `monthlyPayment` and `totalInterest`.
 
+### Shopping Cart
+
+Cart items are saved separately for each logged-in user. Adding a vehicle increments its existing cart quantity; available inventory is checked when adding or changing quantities, but cart items do not reserve stock. All cart routes require login.
+
+Add a vehicle (quantity defaults to `1`):
+
+```bash
+curl -X POST http://localhost:3000/api/cart/items \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"vehicleId":1,"quantity":1}'
+```
+
+The cart endpoints return `{ "data": { "items": [...], "itemCount": 1, "total": 48990 } }` for reads and successful item changes. Each item includes its `vehicle`, `vehicleId`, `quantity`, and `lineTotal`. Clearing the cart returns `204` with no response body. Invalid IDs or quantities return `400`; a vehicle or cart item that does not exist returns `404`; adding or setting a quantity above current stock returns `409`.
+
+Get the cart:
+
+```bash
+curl http://localhost:3000/api/cart \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Set a cart item's quantity, remove an item, or clear the cart:
+
+```bash
+curl -X PATCH http://localhost:3000/api/cart/items/1 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity":2}'
+
+curl -X DELETE http://localhost:3000/api/cart/items/1 \
+  -H "Authorization: Bearer $TOKEN"
+
+curl -X DELETE http://localhost:3000/api/cart \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Checkout
+
+`POST /api/checkout` places an order using the logged-in user's entire cart. No request body is required:
+
+```bash
+curl -X POST http://localhost:3000/api/checkout \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+On success, it returns `201` with `{ "data": { "id": 1, "status": "placed", "total": 48990, "createdAt": "...", "items": [...] } }`. Each order item records the vehicle ID, vehicle details at purchase, quantity, unit price, and line total. The endpoint checks inventory, saves the order, decrements stock, and clears the cart in one database transaction. An empty cart or insufficient current stock returns `409`; if stock is insufficient, the response includes the affected `vehicleId` and available quantity. Failed checkout leaves the cart and inventory unchanged. Checkout requires login and records an order; it does not process payment.
+
 ## Authentication
 
 Logging in returns a session token in the request header. Send it on every request that needs a login:
+
+Use the token returned in `data.token` as a Bearer token in the `Authorization` header.
 
 ```
 Authorization: Bearer <token>
