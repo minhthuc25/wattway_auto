@@ -6,7 +6,7 @@ export async function createSession(tokenHash, userId) {
 }
 
 // Returns the user who owns an unexpired session, or null.
-export async function findUserBySession(tokenHash) {
+export async function getUserBySession(tokenHash) {
   const { rows } = await db.query(
     `SELECT ${USER_FIELDS} FROM users JOIN sessions ON sessions.user_id = users.id
      WHERE sessions.token_hash = $1 AND sessions.expires_at > now()`,

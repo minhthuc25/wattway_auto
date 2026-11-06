@@ -1,4 +1,4 @@
-import { userForToken } from '../services/authService.js';
+import { getUserForToken } from '../services/authService.js';
 
 // Reads the session token from an "Authorization: Bearer <token>" header.
 function bearerToken(req) {
@@ -10,7 +10,7 @@ function bearerToken(req) {
 export async function requireLogin(req, res, next) {
   try {
     const token = bearerToken(req);
-    const user = token ? await userForToken(token) : null;
+    const user = token ? await getUserForToken(token) : null;
     if (!user) return res.status(401).json({ error: 'Login required' });
 
     req.user = user;

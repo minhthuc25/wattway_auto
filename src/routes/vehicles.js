@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { requireAdmin } from '../middleware/auth.js';
+import { parseId } from '../middleware/parseId.js';
+import { calculateSavings } from '../services/calculatorService.js';
 import {
   listVehicles,
   getVehicle,
@@ -6,17 +9,15 @@ import {
   updateVehicle,
   deleteVehicle,
 } from '../storage/vehicleStore.js';
-import { requireAdmin } from '../middleware/auth.js';
-import { calculateSavings } from '../services/calculatorService.js';
 
 const router = Router();
 
+router.param('id', parseId);
+
 router.get('/', async (req, res, next) => {
   try {
-    const { year, sort, order } = req.query;
-    if (year !== undefined && !Number.isInteger(Number(year))) return res.status(400).json({ error: 'year must be an integer' });
-    if (sort !== undefined && !['price', 'mileageKm'].includes(sort)) return res.status(400).json({ error: 'sort must be "price" or "mileageKm"' });
-    if (order !== undefined && !['asc', 'desc'].includes(order)) return res.status(400).json({ error: 'order must be "asc" or "desc"' });
+    const result = validateListing(req.query);
+    if (result) return res.status(400).json({ error: result });
 
     // Filtering and sorting happen in the database query.
     const vehicles = await listVehicles(req.query);
@@ -95,6 +96,17 @@ router.delete('/:id', requireAdmin, async (req, res, next) => {
   }
 });
 
+function validateListing({ condition, available, year, hasAccidents, sort, order }) {
+  if (condition !== undefined && !['new', 'used'].includes(condition)) return 'condition must be "new" or "used"';
+  if (available !== undefined && !['true', 'false'].includes(available)) return 'available must be "true" or "false"';
+  if (year !== undefined && !Number.isInteger(Number(year))) return 'year must be an integer';
+  if (hasAccidents !== undefined && !['true', 'false'].includes(hasAccidents)) return 'hasAccidents must be "true" or "false"';
+  if (sort !== undefined && !['price', 'mileageKm'].includes(sort)) return 'sort must be "price" or "mileageKm"';
+  if (order !== undefined && !['asc', 'desc'].includes(order)) return 'order must be "asc" or "desc"';
+
+  return null;
+}
+
 function validateSavings(query) {
   if (query.kmPerYear === undefined || query.kmPerYear === '') return 'Missing required parameter: kmPerYear';
 
@@ -121,12 +133,12 @@ function validateVehicle(body, creating) {
 
   if (body.make !== undefined && (typeof body.make !== 'string' || !body.make.trim())) return 'make must be a non-empty string';
   if (body.model !== undefined && (typeof body.model !== 'string' || !body.model.trim())) return 'model must be a non-empty string';
-  if (body.year !== undefined && (!Number.isInteger(Number(body.year)) || Number(body.year) < 1886)) return 'year must be a valid integer';
-  if (body.price !== undefined && (!Number.isInteger(Number(body.price)) || Number(body.price) < 0)) return 'price must be a non-negative integer';
-  if (body.rangeKm !== undefined && (!Number.isInteger(Number(body.rangeKm)) || Number(body.rangeKm) <= 0)) return 'rangeKm must be a positive integer';
-  if (body.batteryKwh !== undefined && (!Number.isFinite(Number(body.batteryKwh)) || Number(body.batteryKwh) <= 0)) return 'batteryKwh must be a positive number';
-  if (body.mileageKm !== undefined && (!Number.isInteger(Number(body.mileageKm)) || Number(body.mileageKm) < 0)) return 'mileageKm must be a non-negative integer';
-  if (body.quantity !== undefined && (!Number.isInteger(Number(body.quantity)) || Number(body.quantity) < 0)) return 'quantity must be a non-negative integer';
+  if (body.year !== undefined && (!Number.isInteger(body.year) || body.year < 1886)) return 'year must be a valid integer';
+  if (body.price !== undefined && (!Number.isInteger(body.price) || body.price < 0)) return 'price must be a non-negative integer';
+  if (body.rangeKm !== undefined && (!Number.isInteger(body.rangeKm) || body.rangeKm <= 0)) return 'rangeKm must be a positive integer';
+  if (body.batteryKwh !== undefined && (!Number.isFinite(body.batteryKwh) || body.batteryKwh <= 0)) return 'batteryKwh must be a positive number';
+  if (body.mileageKm !== undefined && (!Number.isInteger(body.mileageKm) || body.mileageKm < 0)) return 'mileageKm must be a non-negative integer';
+  if (body.quantity !== undefined && (!Number.isInteger(body.quantity) || body.quantity < 0)) return 'quantity must be a non-negative integer';
   if (body.hasAccidents !== undefined && typeof body.hasAccidents !== 'boolean') return 'hasAccidents must be a boolean';
   for (const field of ['trim', 'color', 'bodyType', 'historyReport', 'description', 'imageUrl']) {
     if (body[field] !== undefined && typeof body[field] !== 'string') return `${field} must be a string`;

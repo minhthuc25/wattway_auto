@@ -15,7 +15,7 @@ export async function createUser({ username, passwordHash, firstName, lastName }
 }
 
 // Also returns the password hash, for checking a login. Never send it to a client.
-export async function findUserByUsername(username) {
+export async function getUserByUsername(username) {
   const { rows } = await db.query(`SELECT ${USER_FIELDS}, password_hash AS "passwordHash" FROM users WHERE username = $1`, [username]);
   return rows[0] ?? null;
 }

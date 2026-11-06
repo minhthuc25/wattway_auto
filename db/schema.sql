@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '24 hours'
 );
 
+-- What each user currently intends to buy. Rows are removed at checkout.
 CREATE TABLE IF NOT EXISTS cart_items (
   user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   vehicle_id INTEGER NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
@@ -46,13 +47,14 @@ CREATE TABLE IF NOT EXISTS cart_items (
 CREATE TABLE IF NOT EXISTS orders (
   id         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-  status     TEXT NOT NULL DEFAULT 'placed' CHECK (status IN ('placed')),
-  total      BIGINT NOT NULL CHECK (total >= 0),
+  status     TEXT NOT NULL CHECK (status IN ('PROCESSED', 'DENIED')),
+  total      INTEGER NOT NULL CHECK (total >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- A record of what was bought. The vehicle's details are copied, so past orders stay
+-- correct if the vehicle is later edited or deleted.
 CREATE TABLE IF NOT EXISTS order_items (
-  id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   order_id    INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
   vehicle_id  INTEGER NOT NULL,
   make        TEXT NOT NULL,
@@ -61,7 +63,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   condition   TEXT NOT NULL,
   trim        TEXT NOT NULL,
   color       TEXT NOT NULL,
+  mileage_km  INTEGER NOT NULL,
   quantity    INTEGER NOT NULL CHECK (quantity > 0),
   unit_price  INTEGER NOT NULL CHECK (unit_price >= 0),
-  line_total  BIGINT NOT NULL CHECK (line_total >= 0)
+  PRIMARY KEY (order_id, vehicle_id)
 );

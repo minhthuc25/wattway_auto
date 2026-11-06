@@ -30,11 +30,6 @@ const VEHICLE_FIELDS = [
   'updated_at AS "updatedAt"',
 ].join(', ');
 
-// Returns the vehicle id as an integer, or null if it cannot be one.
-function toId(id) {
-  return /^\d{1,9}$/.test(String(id)) ? Number(id) : null;
-}
-
 // Collects the writable fields present in the input as two matching lists:
 // columns[i] is the database column that values[i] is written to.
 // Fields that are missing, or not listed in COLUMNS, are skipped.
@@ -46,7 +41,7 @@ function writableColumns(input) {
     if (input[field] === undefined) continue;
 
     let value = input[field];
-    if (field === 'make' || field === 'model') value = String(value).trim();
+    if (field === 'make' || field === 'model') value = value.trim();
 
     columns.push(column);
     values.push(value);
@@ -92,9 +87,7 @@ export async function listVehicles({ search, make, model, condition, available, 
 }
 
 export async function getVehicle(id) {
-  const vehicleId = toId(id);
-  if (vehicleId === null) return null;
-  const { rows } = await db.query(`SELECT ${VEHICLE_FIELDS} FROM vehicles WHERE id = $1`, [vehicleId]);
+  const { rows } = await db.query(`SELECT ${VEHICLE_FIELDS} FROM vehicles WHERE id = $1`, [id]);
   return rows[0] ?? null;
 }
 
@@ -109,23 +102,23 @@ export async function createVehicle(input) {
 }
 
 export async function updateVehicle(id, input) {
-  const vehicleId = toId(id);
-  if (vehicleId === null) return null;
-
   const { columns, values } = writableColumns(input);
   // $1 is the vehicle id, so the new values start at $2.
   const assignments = columns.map((column, i) => `${column} = $${i + 2}`);
   const { rows } = await db.query(
     `UPDATE vehicles SET ${[...assignments, 'updated_at = now()'].join(', ')}
      WHERE id = $1 RETURNING ${VEHICLE_FIELDS}`,
-    [vehicleId, ...values]
+    [id, ...values]
   );
   return rows[0] ?? null;
 }
 
 export async function deleteVehicle(id) {
-  const vehicleId = toId(id);
-  if (vehicleId === null) return false;
-  const { rows } = await db.query('DELETE FROM vehicles WHERE id = $1 RETURNING id', [vehicleId]);
+  const { rows } = await db.query('DELETE FROM vehicles WHERE id = $1 RETURNING id', [id]);
   return rows.length > 0;
+}
+
+// Runs inside the checkout transaction, so it takes that transaction's connection.
+export async function decreaseVehicleStock(id, amount, tx) {
+  await tx.query('UPDATE vehicles SET quantity = quantity - $2, updated_at = now() WHERE id = $1', [id, amount]);
 }

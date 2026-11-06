@@ -1,9 +1,9 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { createUser, findUserByUsername } from '../storage/userStore.js';
+import { createUser, getUserByUsername } from '../storage/userStore.js';
 import {
   createSession,
-  findUserBySession,
+  getUserBySession,
   deleteSession,
   deleteExpiredSessions,
 } from '../storage/sessionStore.js';
@@ -45,7 +45,7 @@ export async function register({ username, password, firstName, lastName }) {
 
 // Returns { token, user }, or null if the username or the password is wrong (without saying which).
 export async function login(username, password) {
-  const account = await findUserByUsername(normalizeUsername(username));
+  const account = await getUserByUsername(normalizeUsername(username));
   if (!account || !(await verifyPassword(password, account.passwordHash))) return null;
 
   // Remove rows from the session table that represent expired sessions before adding a new one
@@ -62,6 +62,6 @@ export async function logout(token) {
 }
 
 // Returns the logged-in user for a session token, or null if it is unknown or expired.
-export async function userForToken(token) {
-  return findUserBySession(hashToken(token));
+export async function getUserForToken(token) {
+  return getUserBySession(hashToken(token));
 }

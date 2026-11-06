@@ -16,9 +16,9 @@ npm run dev
 
 The API runs at `http://localhost:3000`.
 
-On first start the server creates and seeds the database in `db/pgdata`. Later starts reuse the data and apply any new tables from `db/schema.sql`.
+On first start the server creates the database in `db/pgdata`. Later starts reuse the same data and add any new tables.
 
-To go back to the original sample data, stop the server and run:
+To go back to the original sample data, or after a change to an existing table, stop the server and run:
 
 ```bash
 npm run db:reset
@@ -37,12 +37,14 @@ npm run db:reset
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
 | GET | `/api/vehicles/:id/savings?kmPerYear=value` | Public | Yearly cost and CO2 savings compared with a gas car |
 | GET | `/api/loan?price=&downPayment=&rate=&months=` | Public | Monthly payment estimate for a loan |
-| GET | `/api/cart` | Logged in | View your shopping cart |
-| POST | `/api/cart/items` | Logged in | Add a vehicle and quantity to your cart |
-| PATCH | `/api/cart/items/:vehicleId` | Logged in | Set the quantity of a cart item |
+| GET | `/api/cart` | Logged in | Get your cart |
+| POST | `/api/cart/items` | Logged in | Add a vehicle to your cart |
+| PATCH | `/api/cart/items/:vehicleId` | Logged in | Change the quantity of a vehicle in your cart |
 | DELETE | `/api/cart/items/:vehicleId` | Logged in | Remove a vehicle from your cart |
-| DELETE | `/api/cart` | Logged in | Clear your cart |
-| POST | `/api/checkout` | Logged in | Place an order from your cart |
+| DELETE | `/api/cart` | Logged in | Empty your cart |
+| POST | `/api/orders` | Logged in | Check out: place an order for everything in your cart |
+| GET | `/api/orders` | Logged in | List your orders, newest first |
+| GET | `/api/orders/:id` | Logged in | Get one of your orders |
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
@@ -90,59 +92,30 @@ All four are required, e.g. `/api/loan?price=80000&downPayment=20000&rate=6&mont
 
 Returns `loanAmount`, `monthlyPayment` and `totalInterest`.
 
-### Shopping Cart
+### Parameters for Shopping Cart
 
-Cart items are saved separately for each logged-in user. Adding a vehicle increments its existing cart quantity; available inventory is checked when adding or changing quantities, but cart items do not reserve stock. All cart routes require login.
+Each user has their own cart. A vehicle in a cart does not reserve stock.
 
-Add a vehicle (quantity defaults to `1`):
+| Parameter | Values |
+|---|---|
+| `vehicleId` | ID of the vehicle, required when adding |
+| `quantity` | A whole number of at least 1. When adding, it is added to any quantity already in the cart (default `1`). When changing, it replaces the quantity and is required |
 
-```bash
-curl -X POST http://localhost:3000/api/cart/items \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"vehicleId":1,"quantity":1}'
-```
-
-The cart endpoints return `{ "data": { "items": [...], "itemCount": 1, "total": 48990 } }` for reads and successful item changes. Each item includes its `vehicle`, `vehicleId`, `quantity`, and `lineTotal`. Clearing the cart returns `204` with no response body. Invalid IDs or quantities return `400`; a vehicle or cart item that does not exist returns `404`; adding or setting a quantity above current stock returns `409`.
-
-Get the cart:
-
-```bash
-curl http://localhost:3000/api/cart \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-Set a cart item's quantity, remove an item, or clear the cart:
-
-```bash
-curl -X PATCH http://localhost:3000/api/cart/items/1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"quantity":2}'
-
-curl -X DELETE http://localhost:3000/api/cart/items/1 \
-  -H "Authorization: Bearer $TOKEN"
-
-curl -X DELETE http://localhost:3000/api/cart \
-  -H "Authorization: Bearer $TOKEN"
-```
+Returns `items`, `itemCount` and `total`. A quantity above the available stock returns `409`.
 
 ### Checkout
 
-`POST /api/checkout` places an order using the logged-in user's entire cart. No request body is required:
+`POST /api/orders` takes no parameters. The payment system is a mock: every third request is denied, counting from when the server started.
 
-```bash
-curl -X POST http://localhost:3000/api/checkout \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-On success, it returns `201` with `{ "data": { "id": 1, "status": "placed", "total": 48990, "createdAt": "...", "items": [...] } }`. Each order item records the vehicle ID, vehicle details at purchase, quantity, unit price, and line total. The endpoint checks inventory, saves the order, decrements stock, and clears the cart in one database transaction. An empty cart or insufficient current stock returns `409`; if stock is insufficient, the response includes the affected `vehicleId` and available quantity. Failed checkout leaves the cart and inventory unchanged. Checkout requires login and records an order; it does not process payment.
+| Result | Status | Outcome |
+|---|---|---|
+| Payment approved | `201`, "Order Successfully Completed" | Order saved as `PROCESSED`, stock reduced, cart emptied |
+| Payment denied | `402`, "Credit Card Authorization Failed" | Order saved as `DENIED`, stock and cart unchanged |
+| Empty cart or too little stock | `409` | Nothing |
 
 ## Authentication
 
-Logging in returns a session token in the request header. Send it on every request that needs a login:
-
-Use the token returned in `data.token` as a Bearer token in the `Authorization` header.
+Logging in returns a session token found in `data.token`. Send it on every request that needs a login:
 
 ```
 Authorization: Bearer <token>
@@ -210,6 +183,45 @@ Delete a vehicle:
 
 ```bash
 curl -X DELETE http://localhost:3000/api/vehicles/1 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Add a vehicle to your cart:
+
+```bash
+curl -X POST http://localhost:3000/api/cart/items \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"vehicleId":2,"quantity":1}'
+```
+
+Get your cart:
+
+```bash
+curl http://localhost:3000/api/cart \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Change the quantity of a vehicle in your cart:
+
+```bash
+curl -X PATCH http://localhost:3000/api/cart/items/2 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity":2}'
+```
+
+Check out:
+
+```bash
+curl -X POST http://localhost:3000/api/orders \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+List your orders:
+
+```bash
+curl http://localhost:3000/api/orders \
   -H "Authorization: Bearer $TOKEN"
 ```
 
