@@ -10,6 +10,7 @@ import {
   updateVehicle,
   deleteVehicle,
 } from '../storage/vehicleStore.js';
+import { validateListing, validateSavings, validateReview, validateVehicle } from '../validation/validators.js';
 
 const router = Router();
 
@@ -121,68 +122,5 @@ router.delete('/:id', requireAdmin, async (req, res, next) => {
     next(err);
   }
 });
-
-function validateListing({ condition, available, year, hasAccidents, sort, order }) {
-  if (condition !== undefined && !['new', 'used'].includes(condition)) return 'condition must be "new" or "used"';
-  if (available !== undefined && !['true', 'false'].includes(available)) return 'available must be "true" or "false"';
-  if (year !== undefined && !Number.isInteger(Number(year))) return 'year must be an integer';
-  if (hasAccidents !== undefined && !['true', 'false'].includes(hasAccidents)) return 'hasAccidents must be "true" or "false"';
-  if (sort !== undefined && !['price', 'mileageKm'].includes(sort)) return 'sort must be "price" or "mileageKm"';
-  if (order !== undefined && !['asc', 'desc'].includes(order)) return 'order must be "asc" or "desc"';
-
-  return null;
-}
-
-function validateSavings(query) {
-  if (query.kmPerYear === undefined || query.kmPerYear === '') return 'Missing required parameter: kmPerYear';
-
-  for (const param of ['kmPerYear', 'gasCarLPer100Km', 'gasPricePerL', 'electricityPricePerKwh']) {
-    const value = query[param];
-    if (value !== undefined && !(Number.isFinite(Number(value)) && Number(value) > 0)) return `${param} must be a positive number`;
-  }
-
-  return null;
-}
-
-function validateReview(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
-
-  if (body.rating === undefined) return 'Missing required field: rating';
-  if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5) return 'rating must be a whole number from 1 to 5';
-  if (body.comment !== undefined && typeof body.comment !== 'string') return 'comment must be a string';
-
-  return null;
-}
-
-function validateVehicle(body, creating) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
-
-  // rangeKm and batteryKwh are required because the savings calculator uses them.
-  const required = ['make', 'model', 'year', 'price', 'rangeKm', 'batteryKwh'];
-  if (creating) {
-    for (const field of required) {
-      if (body[field] === undefined || body[field] === null || body[field] === '') {
-        return `Missing required field: ${field}`;
-      }
-    }
-  }
-
-  if (body.make !== undefined && (typeof body.make !== 'string' || !body.make.trim())) return 'make must be a non-empty string';
-  if (body.model !== undefined && (typeof body.model !== 'string' || !body.model.trim())) return 'model must be a non-empty string';
-  if (body.year !== undefined && (!Number.isInteger(body.year) || body.year < 1886)) return 'year must be a valid integer';
-  if (body.price !== undefined && (!Number.isInteger(body.price) || body.price < 0)) return 'price must be a non-negative integer';
-  if (body.rangeKm !== undefined && (!Number.isInteger(body.rangeKm) || body.rangeKm <= 0)) return 'rangeKm must be a positive integer';
-  if (body.batteryKwh !== undefined && (!Number.isFinite(body.batteryKwh) || body.batteryKwh <= 0)) return 'batteryKwh must be a positive number';
-  if (body.mileageKm !== undefined && (!Number.isInteger(body.mileageKm) || body.mileageKm < 0)) return 'mileageKm must be a non-negative integer';
-  if (body.quantity !== undefined && (!Number.isInteger(body.quantity) || body.quantity < 0)) return 'quantity must be a non-negative integer';
-  if (body.hasAccidents !== undefined && typeof body.hasAccidents !== 'boolean') return 'hasAccidents must be a boolean';
-  for (const field of ['trim', 'color', 'bodyType', 'historyReport', 'description', 'imageUrl']) {
-    if (body[field] !== undefined && typeof body[field] !== 'string') return `${field} must be a string`;
-  }
-  if (body.available !== undefined) return 'available is derived from quantity and cannot be set';
-  if (body.condition !== undefined && !['new', 'used'].includes(body.condition)) return 'condition must be "new" or "used"';
-
-  return null;
-}
 
 export default router;

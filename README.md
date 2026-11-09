@@ -31,6 +31,7 @@ npm run db:reset
 | GET | `/api/health` | Public | Health check |
 | POST | `/api/users` | Public | Register a customer account |
 | GET | `/api/users/me` | Logged in | Get your own account |
+| PATCH | `/api/users/me` | Logged in | Change your default shipping address |
 | POST | `/api/sessions` | Public | Log in; returns a session token |
 | DELETE | `/api/sessions/current` | Logged in | Log out |
 | GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted |
@@ -50,6 +51,16 @@ npm run db:reset
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
+
+### Parameters for User Accounts
+
+Registering takes `username`, `password` (at least 8 characters), `firstName` and `lastName`, plus an optional `defaultShipping` address. The address can pre-fill checkout, but each order keeps its own copy. `PATCH /api/users/me` takes `defaultShipping` and requires it.
+
+| Parameter | Values |
+|---|---|
+| `defaultShipping.street`, `defaultShipping.city`, `defaultShipping.province`, `defaultShipping.country`, `defaultShipping.postalCode` | Text, all required if an address is given |
+
+Accounts without an address return `defaultShipping` as `null`.
 
 ### Parameters for Vehicle Listing
 
@@ -107,7 +118,16 @@ Returns `items`, `itemCount` and `total`. A quantity above the available stock r
 
 ### Checkout
 
-`POST /api/orders` takes no parameters. The payment system is a mock: every third request is denied, counting from when the server started.
+`POST /api/orders` needs a `shipping` object and a `card` object, all fields required. The shipping address is saved on the order; the card is never stored.
+
+| Parameter | Values |
+|---|---|
+| `shipping.street`, `shipping.city`, `shipping.province`, `shipping.country`, `shipping.postalCode` | Text |
+| `card.number` | 13 to 19 digits, no spaces |
+| `card.expiry` | `MM/YY`, not expired |
+| `card.cvv` | 3 or 4 digits |
+
+The payment system is a mock: every third request is denied, counting from when the server started.
 
 | Result | Status | Outcome |
 |---|---|---|
@@ -228,7 +248,9 @@ Check out:
 
 ```bash
 curl -X POST http://localhost:3000/api/orders \
-  -H "Authorization: Bearer $TOKEN"
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"shipping":{"street":"4700 Keele St","city":"Toronto","province":"ON","country":"Canada","postalCode":"M3J 1P3"},"card":{"number":"4111111111111111","expiry":"12/30","cvv":"123"}}'
 ```
 
 List your orders:

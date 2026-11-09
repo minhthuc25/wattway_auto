@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { requireLogin } from '../middleware/auth.js';
 import { register } from '../services/authService.js';
+import { updateDefaultShipping } from '../storage/userStore.js';
+import { validateUserUpdate, validateRegistration } from '../validation/validators.js';
 
 const router = Router();
 
@@ -23,18 +25,16 @@ router.get('/me', requireLogin, (req, res) => {
   res.json({ data: req.user });
 });
 
-function validateRegistration(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
+// Change the logged-in user's default shipping address.
+router.patch('/me', requireLogin, async (req, res, next) => {
+  try {
+    const result = validateUserUpdate(req.body);
+    if (result) return res.status(400).json({ error: result });
 
-  for (const field of ['username', 'password', 'firstName', 'lastName']) {
-    if (typeof body[field] !== 'string' || !body[field].trim()) return `Missing required field: ${field}`;
+    res.json({ data: await updateDefaultShipping(req.user.id, req.body.defaultShipping) });
+  } catch (err) {
+    next(err);
   }
-  if (!/^[a-z0-9._-]{3,30}$/i.test(body.username.trim())) {
-    return 'username must be 3-30 characters: letters, digits, ".", "_" or "-"';
-  }
-  if (body.password.length < 8) return 'password must be at least 8 characters';
-
-  return null;
-}
+});
 
 export default router;

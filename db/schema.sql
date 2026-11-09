@@ -21,13 +21,18 @@ CREATE TABLE IF NOT EXISTS vehicles (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-  id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  username      TEXT NOT NULL UNIQUE,                       -- stored in lowercase
-  password_hash TEXT NOT NULL,
-  first_name    TEXT NOT NULL,
-  last_name     TEXT NOT NULL,
-  role          TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username             TEXT NOT NULL UNIQUE,                       -- stored in lowercase
+  password_hash        TEXT NOT NULL,
+  first_name           TEXT NOT NULL,
+  last_name            TEXT NOT NULL,
+  role                 TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+  shipping_street      TEXT,                                       -- default shipping address, optional; pre-fills checkout
+  shipping_city        TEXT,
+  shipping_province    TEXT,
+  shipping_country     TEXT,
+  shipping_postal_code TEXT,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -45,11 +50,16 @@ CREATE TABLE IF NOT EXISTS cart_items (
 );
 
 CREATE TABLE IF NOT EXISTS orders (
-  id         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-  status     TEXT NOT NULL CHECK (status IN ('PROCESSED', 'DENIED')),
-  total      INTEGER NOT NULL CHECK (total >= 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id              INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  status               TEXT NOT NULL CHECK (status IN ('PROCESSED', 'DENIED')),
+  total                INTEGER NOT NULL CHECK (total >= 0),
+  shipping_street      TEXT NOT NULL,
+  shipping_city        TEXT NOT NULL,
+  shipping_province    TEXT NOT NULL,
+  shipping_country     TEXT NOT NULL,
+  shipping_postal_code TEXT NOT NULL,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- A record of what was bought. Past orders remain unchanged if the vehicle is later edited or deleted.

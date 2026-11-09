@@ -34,12 +34,13 @@ function normalizeUsername(username) {
 }
 
 // Creates a customer account. Returns the new user, or null if the username is already taken.
-export async function register({ username, password, firstName, lastName }) {
+export async function register({ username, password, firstName, lastName, defaultShipping }) {
   return createUser({
     username: normalizeUsername(username),
     passwordHash: await hashPassword(password),
     firstName: firstName.trim(),
     lastName: lastName.trim(),
+    defaultShipping,
   });
 }
 

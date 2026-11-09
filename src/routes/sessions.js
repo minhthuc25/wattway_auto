@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireLogin } from '../middleware/auth.js';
 import { login, logout } from '../services/authService.js';
+import { validateLogin } from '../validation/validators.js';
 
 const router = Router();
 
@@ -28,15 +29,5 @@ router.delete('/current', requireLogin, async (req, res, next) => {
     next(err);
   }
 });
-
-function validateLogin(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
-
-  for (const field of ['username', 'password']) {
-    if (typeof body[field] !== 'string') return `Missing required field: ${field}`;
-  }
-
-  return null;
-}
 
 export default router;

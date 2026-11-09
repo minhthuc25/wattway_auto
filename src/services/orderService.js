@@ -7,9 +7,9 @@ import { authorizePayment } from './paymentService.js';
 // Places an order for the user's whole cart. Everything runs in one transaction,
 // so the order, the stock and the cart all change together or not at all.
 // A denied payment is still saved as an order, but leaves the stock and the cart as they were.
+// The card is only passed to the payment service, so it is never stored.
 // Returns { order }, or { problem } with the reason no order could be placed.
-// TODO: collect and save the shipping information
-export async function checkoutCart(userId) {
+export async function checkoutCart(userId, shipping, card) {
   return db.transaction(async (tx) => {
     const items = await lockCartItems(userId, tx);
     if (items.length === 0) return { problem: 'empty_cart' };
@@ -19,9 +19,9 @@ export async function checkoutCart(userId) {
       return { problem: 'insufficient_stock', vehicleId: unavailable.vehicleId, available: unavailable.availableQuantity };
     }
 
-    const status = authorizePayment() ? 'PROCESSED' : 'DENIED';
+    const status = authorizePayment(card) ? 'PROCESSED' : 'DENIED';
     const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const orderId = await createOrder(userId, status, total, tx);
+    const orderId = await createOrder(userId, status, total, shipping, tx);
     for (const item of items) {
       await addOrderItem(orderId, item, tx);
     }

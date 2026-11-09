@@ -1,6 +1,7 @@
 import { db } from './db.js';
+import { SHIPPING_OBJECT, shippingValues } from './userStore.js';
 
-const ORDER_FIELDS = 'id, status, total, created_at AS "createdAt"';
+const ORDER_FIELDS = `id, status, total, created_at AS "createdAt", ${SHIPPING_OBJECT} AS shipping`;
 
 // Adds an order's items, with the vehicle details and prices saved when it was placed.
 async function withItems(order, tx) {
@@ -45,10 +46,11 @@ export async function hasPurchasedVehicle(userId, vehicleId) {
 }
 
 // createOrder and addOrderItem run inside the checkout transaction, so they take its connection.
-export async function createOrder(userId, status, total, tx) {
+export async function createOrder(userId, status, total, shipping, tx) {
   const { rows } = await tx.query(
-    'INSERT INTO orders (user_id, status, total) VALUES ($1, $2, $3) RETURNING id',
-    [userId, status, total]
+    `INSERT INTO orders (user_id, status, total, shipping_street, shipping_city, shipping_province, shipping_country, shipping_postal_code)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+    [userId, status, total, ...shippingValues(shipping)]
   );
   return rows[0].id;
 }

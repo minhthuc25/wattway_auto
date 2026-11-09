@@ -2,8 +2,8 @@
 // The count is kept in memory, so it starts again when the server restarts.
 let requestCount = 0;
 
-// TODO: take the customer's card details here
-export function authorizePayment() {
+// A real payment provider would charge this card; the mock only counts requests.
+export function authorizePayment(card) {
   requestCount += 1;
   return requestCount % 3 !== 0;
 }
