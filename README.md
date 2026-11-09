@@ -48,6 +48,9 @@ npm run db:reset
 | POST | `/api/orders` | Logged in | Check out: place an order for everything in your cart |
 | GET | `/api/orders` | Logged in | List your orders, newest first |
 | GET | `/api/orders/:id` | Logged in | Get one of your orders |
+| POST | `/api/test-drives` | Logged in | Book a test drive |
+| GET | `/api/test-drives` | Logged in | List your test drives, soonest first (admins see all) |
+| PATCH | `/api/test-drives/:id` | Logged in | Cancel your test drive (admins can cancel any) |
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
@@ -134,6 +137,19 @@ The payment system is a mock: every third request is denied, counting from when 
 | Payment approved | `201`, "Order Successfully Completed" | Order saved as `PROCESSED`, stock reduced, cart emptied |
 | Payment denied | `402`, "Credit Card Authorization Failed" | Order saved as `DENIED`, stock and cart unchanged |
 | Empty cart or too little stock | `409` | Nothing |
+
+### Parameters for Test Drives
+
+Test drives are booked in one-hour slots, and each vehicle can have one test drive per slot. A taken slot or a sold-out vehicle returns `409`. Cancelling frees the slot.
+
+| Parameter | Values |
+|---|---|
+| `vehicleId` | ID of the vehicle, required |
+| `type` | `at_home` or `virtual`, required |
+| `scheduledAt` | A future date and time on the hour, with a time zone, e.g. `2026-12-01T15:00:00-05:00`, required |
+| `address` | The customer's address, required when `type` is `at_home`; a virtual test drive has none |
+
+To cancel, send `PATCH` with `{ "status": "CANCELLED" }`.
 
 ### Parameters for Reviews
 
@@ -258,6 +274,24 @@ List your orders:
 ```bash
 curl http://localhost:3000/api/orders \
   -H "Authorization: Bearer $TOKEN"
+```
+
+Book a test drive:
+
+```bash
+curl -X POST http://localhost:3000/api/test-drives \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"vehicleId":3,"type":"at_home","scheduledAt":"2030-12-01T15:00:00-05:00","address":"4700 Keele St, Toronto"}'
+```
+
+Cancel a test drive (replace `1` with an actual ID):
+
+```bash
+curl -X PATCH http://localhost:3000/api/test-drives/1 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"CANCELLED"}'
 ```
 
 Review a vehicle you have purchased:

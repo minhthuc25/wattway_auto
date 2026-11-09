@@ -103,6 +103,36 @@ export function validateReview(body) {
   return null;
 }
 
+// Test drives
+
+export function validateTestDrive(body) {
+  if (!isObject(body)) return 'Request body must be a JSON object';
+  if (!Number.isInteger(body.vehicleId) || body.vehicleId <= 0) return 'vehicleId must be a positive integer';
+  if (!['at_home', 'virtual'].includes(body.type)) return 'type must be "at_home" or "virtual"';
+
+  // The time zone is required so the time means the same thing wherever the customer is.
+  const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/;
+  if (typeof body.scheduledAt !== 'string' || !iso.test(body.scheduledAt) || Number.isNaN(Date.parse(body.scheduledAt))) {
+    return 'scheduledAt must be a date and time with a time zone, e.g. 2026-12-01T15:00:00-05:00';
+  }
+  const scheduledAt = new Date(body.scheduledAt);
+  if (scheduledAt <= new Date()) return 'scheduledAt must be in the future';
+  if (scheduledAt.getUTCMinutes() !== 0 || scheduledAt.getUTCSeconds() !== 0) return 'scheduledAt must be on the hour';
+
+  if (body.type === 'at_home' && (typeof body.address !== 'string' || !body.address.trim())) {
+    return 'address is required for an at-home test drive';
+  }
+
+  return null;
+}
+
+export function validateTestDriveUpdate(body) {
+  if (!isObject(body)) return 'Request body must be a JSON object';
+  if (body.status !== 'CANCELLED') return 'status must be "CANCELLED"';
+
+  return null;
+}
+
 // Calculators
 
 export function validateSavings(query) {

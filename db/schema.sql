@@ -86,3 +86,17 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, vehicle_id)
 );
+
+CREATE TABLE IF NOT EXISTS test_drives (
+  id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id      INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  vehicle_id   INTEGER NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
+  type         TEXT NOT NULL CHECK (type IN ('at_home', 'virtual')),
+  scheduled_at TIMESTAMPTZ NOT NULL,
+  address      TEXT,                                                       -- customer's address; null for virtual test drives
+  status     TEXT NOT NULL DEFAULT 'SCHEDULED' CHECK (status IN ('SCHEDULED', 'CANCELLED')),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- A vehicle can only have one test drive per time slot. Cancelling a test drive frees its slot.
+CREATE UNIQUE INDEX IF NOT EXISTS test_drives_one_per_slot ON test_drives (vehicle_id, scheduled_at) WHERE status = 'SCHEDULED';
