@@ -36,7 +36,9 @@ npm run db:reset
 | GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted |
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
 | GET | `/api/vehicles/:id/savings?kmPerYear=value` | Public | Yearly cost and CO2 savings compared with a gas car |
+| GET | `/api/vehicles/:id/reviews` | Public | Get a vehicle's reviews and average ratings |
 | GET | `/api/loan?price=&downPayment=&rate=&months=` | Public | Monthly payment estimate for a loan |
+| POST | `/api/vehicles/:id/reviews` | Verified owner | Review a vehicle you have purchased |
 | GET | `/api/cart` | Logged in | Get your cart |
 | POST | `/api/cart/items` | Logged in | Add a vehicle to your cart |
 | PATCH | `/api/cart/items/:vehicleId` | Logged in | Change the quantity of a vehicle in your cart |
@@ -112,6 +114,17 @@ Returns `items`, `itemCount` and `total`. A quantity above the available stock r
 | Payment approved | `201`, "Order Successfully Completed" | Order saved as `PROCESSED`, stock reduced, cart emptied |
 | Payment denied | `402`, "Credit Card Authorization Failed" | Order saved as `DENIED`, stock and cart unchanged |
 | Empty cart or too little stock | `409` | Nothing |
+
+### Parameters for Reviews
+
+A verified owner is someone with a `PROCESSED` order that includes the vehicle. Anyone else gets `403`. Each user can review a vehicle once; a second review gets `409`.
+
+| Parameter | Values |
+|---|---|
+| `rating` | Stars, a whole number from 1 to 5, required |
+| `comment` | Optional text |
+
+`GET` returns `reviews`, `reviewCount` and `averageRating`.
 
 ## Authentication
 
@@ -223,6 +236,21 @@ List your orders:
 ```bash
 curl http://localhost:3000/api/orders \
   -H "Authorization: Bearer $TOKEN"
+```
+
+Review a vehicle you have purchased:
+
+```bash
+curl -X POST http://localhost:3000/api/vehicles/2/reviews \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"rating":5,"comment":"Great daily driver."}'
+```
+
+Get a vehicle's reviews:
+
+```bash
+curl http://localhost:3000/api/vehicles/2/reviews
 ```
 
 Log out:

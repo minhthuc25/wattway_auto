@@ -32,6 +32,18 @@ export async function getOrder(userId, orderId, tx = db) {
   return rows[0] ? withItems(rows[0], tx) : null;
 }
 
+// Returns whether the user has a successfully paid order that includes this vehicle.
+export async function hasPurchasedVehicle(userId, vehicleId) {
+  const { rows } = await db.query(
+    `SELECT EXISTS (
+       SELECT 1 FROM orders JOIN order_items ON order_items.order_id = orders.id
+       WHERE orders.user_id = $1 AND order_items.vehicle_id = $2 AND orders.status = 'PROCESSED'
+     ) AS purchased`,
+    [userId, vehicleId]
+  );
+  return rows[0].purchased;
+}
+
 // createOrder and addOrderItem run inside the checkout transaction, so they take its connection.
 export async function createOrder(userId, status, total, tx) {
   const { rows } = await tx.query(

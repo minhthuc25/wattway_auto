@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireLogin, requireAdmin } from '../middleware/auth.js';
 import { parseId } from '../middleware/parseId.js';
 import { calculateSavings } from '../services/calculatorService.js';
+import { getVehicleReviews, addVehicleReview } from '../services/reviewService.js';
 import {
   listVehicles,
   getVehicle,
@@ -55,6 +56,31 @@ router.get('/:id/savings', async (req, res, next) => {
       electricityPricePerKwh: toNumber(req.query.electricityPricePerKwh),
     });
     res.json({ data: savings });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/reviews', async (req, res, next) => {
+  try {
+    const reviews = await getVehicleReviews(req.params.id);
+    if (!reviews) return res.status(404).json({ error: 'Vehicle not found' });
+    res.json({ data: reviews });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/reviews', requireLogin, async (req, res, next) => {
+  try {
+    const result = validateReview(req.body);
+    if (result) return res.status(400).json({ error: result });
+
+    const { problem, review } = await addVehicleReview(req.user, req.params.id, req.body);
+    if (problem === 'vehicle_not_found') return res.status(404).json({ error: 'Vehicle not found' });
+    if (problem === 'not_verified_owner') return res.status(403).json({ error: 'Only verified owners of this vehicle can write a review' });
+    if (problem === 'already_reviewed') return res.status(409).json({ error: 'You have already reviewed this vehicle' });
+    res.status(201).json({ data: review });
   } catch (err) {
     next(err);
   }
@@ -114,6 +140,16 @@ function validateSavings(query) {
     const value = query[param];
     if (value !== undefined && !(Number.isFinite(Number(value)) && Number(value) > 0)) return `${param} must be a positive number`;
   }
+
+  return null;
+}
+
+function validateReview(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be a JSON object';
+
+  if (body.rating === undefined) return 'Missing required field: rating';
+  if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5) return 'rating must be a whole number from 1 to 5';
+  if (body.comment !== undefined && typeof body.comment !== 'string') return 'comment must be a string';
 
   return null;
 }

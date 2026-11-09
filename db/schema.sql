@@ -52,8 +52,7 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- A record of what was bought. The vehicle's details are copied, so past orders stay
--- correct if the vehicle is later edited or deleted.
+-- A record of what was bought. Past orders remain unchanged if the vehicle is later edited or deleted.
 CREATE TABLE IF NOT EXISTS order_items (
   order_id    INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
   vehicle_id  INTEGER NOT NULL,
@@ -67,4 +66,13 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity    INTEGER NOT NULL CHECK (quantity > 0),
   unit_price  INTEGER NOT NULL CHECK (unit_price >= 0),
   PRIMARY KEY (order_id, vehicle_id)
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+  user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  vehicle_id INTEGER NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
+  rating     INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment    TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, vehicle_id)
 );
