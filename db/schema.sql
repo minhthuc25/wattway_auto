@@ -22,12 +22,13 @@ CREATE TABLE IF NOT EXISTS vehicles (
 
 CREATE TABLE IF NOT EXISTS users (
   id                   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  username             TEXT NOT NULL UNIQUE,                       -- stored in lowercase
+  username             TEXT NOT NULL UNIQUE, -- stored in lowercase
   password_hash        TEXT NOT NULL,
   first_name           TEXT NOT NULL,
   last_name            TEXT NOT NULL,
   role                 TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
-  shipping_street      TEXT,                                       -- default shipping address, optional; pre-fills checkout
+  -- default shipping address (optional, used to fill out checkout details)
+  shipping_street      TEXT,
   shipping_city        TEXT,
   shipping_province    TEXT,
   shipping_country     TEXT,
@@ -41,7 +42,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '24 hours'
 );
 
--- What each user currently intends to buy. Rows are removed at checkout.
+-- A temporary storage of order items while the user is still shopping
 CREATE TABLE IF NOT EXISTS cart_items (
   user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   vehicle_id INTEGER NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
@@ -62,7 +63,7 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- A record of what was bought. Past orders remain unchanged if the vehicle is later edited or deleted.
+-- A permanent record of order items, data remains unchanged if vehicles are updated/deleted
 CREATE TABLE IF NOT EXISTS order_items (
   order_id    INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
   vehicle_id  INTEGER NOT NULL,
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS test_drives (
   vehicle_id   INTEGER NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
   type         TEXT NOT NULL CHECK (type IN ('at_home', 'virtual')),
   scheduled_at TIMESTAMPTZ NOT NULL,
-  address      TEXT,                                                       -- customer's address; null for virtual test drives
+  address      TEXT,                                                       -- customer's address (null for virtual test drives)
   status     TEXT NOT NULL DEFAULT 'SCHEDULED' CHECK (status IN ('SCHEDULED', 'CANCELLED')),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );

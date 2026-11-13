@@ -4,11 +4,6 @@ import { createOrder, addOrderItem, getOrder } from '../storage/orderStore.js';
 import { decreaseVehicleStock } from '../storage/vehicleStore.js';
 import { authorizePayment } from './paymentService.js';
 
-// Places an order for the user's whole cart. Everything runs in one transaction,
-// so the order, the stock and the cart all change together or not at all.
-// A denied payment is still saved as an order, but leaves the stock and the cart as they were.
-// The card is only passed to the payment service, so it is never stored.
-// Returns { order }, or { problem } with the reason no order could be placed.
 export async function checkoutCart(userId, shipping, card) {
   return db.transaction(async (tx) => {
     const items = await lockCartItems(userId, tx);
@@ -22,16 +17,13 @@ export async function checkoutCart(userId, shipping, card) {
     const status = authorizePayment(card) ? 'PROCESSED' : 'DENIED';
     const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const orderId = await createOrder(userId, status, total, shipping, tx);
+
+    // denied orders are still saved, but leave the stock and cart alone
     for (const item of items) {
       await addOrderItem(orderId, item, tx);
+      if (status === 'PROCESSED') await decreaseVehicleStock(item.vehicleId, item.quantity, tx);
     }
-
-    if (status === 'PROCESSED') {
-      for (const item of items) {
-        await decreaseVehicleStock(item.vehicleId, item.quantity, tx);
-      }
-      await deleteCartItems(userId, tx);
-    }
+    if (status === 'PROCESSED') await deleteCartItems(userId, tx);
 
     return { order: await getOrder(userId, orderId, tx) };
   });

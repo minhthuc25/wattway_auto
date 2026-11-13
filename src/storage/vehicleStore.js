@@ -1,6 +1,6 @@
 import { db } from './db.js';
 
-// API field name -> database column.
+// API field -> database column
 const COLUMNS = {
   make: 'make',
   model: 'model',
@@ -20,8 +20,6 @@ const COLUMNS = {
   imageUrl: 'image_url',
 };
 
-// Columns returned for a vehicle, renamed to the API's camelCase field names.
-// `available` is derived from stock.
 const VEHICLE_FIELDS = [
   'id',
   ...Object.entries(COLUMNS).map(([field, column]) => `${column} AS "${field}"`),
@@ -30,9 +28,6 @@ const VEHICLE_FIELDS = [
   'updated_at AS "updatedAt"',
 ].join(', ');
 
-// Collects the writable fields present in the input as two matching lists:
-// columns[i] is the database column that values[i] is written to.
-// Fields that are missing, or not listed in COLUMNS, are skipped.
 function writableColumns(input) {
   const columns = [];
   const values = [];
@@ -40,28 +35,23 @@ function writableColumns(input) {
   for (const [field, column] of Object.entries(COLUMNS)) {
     if (input[field] === undefined) continue;
 
-    let value = input[field];
-    if (field === 'make' || field === 'model') value = value.trim();
-
     columns.push(column);
-    values.push(value);
+    values.push(field === 'make' || field === 'model' ? input[field].trim() : input[field]);
   }
 
   return { columns, values };
 }
 
-// Escapes LIKE wildcards so a search for "100%" matches the text literally.
 function likePattern(text) {
-  return `%${String(text).replace(/[\\%_]/g, '\\$&')}%`;
+  return `%${String(text).replace(/[\\%_]/g, '\\$&')}%`; // escape LIKE wildcards
 }
 
 export async function listVehicles({ search, make, model, condition, available, year, bodyType, hasAccidents, sort, order } = {}) {
   const where = [];
   const params = [];
-  // Adds a WHERE condition; every `?` in it refers to the same query parameter.
   const filter = (clause, value) => {
     params.push(value);
-    where.push(clause.replaceAll('?', `$${params.length}`));
+    where.push(clause.replaceAll('?', `$${params.length}`)); // ? becomes the next $n placeholder
   };
 
   if (search) filter(`concat_ws(' ', make, model, trim, year, description) ILIKE ?`, likePattern(search));
@@ -73,8 +63,7 @@ export async function listVehicles({ search, make, model, condition, available, 
   if (bodyType) filter('lower(body_type) = lower(?)', String(bodyType));
   if (hasAccidents !== undefined) filter('has_accidents = ?', String(hasAccidents) === 'true');
 
-  // ORDER BY cannot take a query parameter, so the column comes from the COLUMNS whitelist.
-  const sortColumn = Object.hasOwn(COLUMNS, sort) ? COLUMNS[sort] : 'id';
+  const sortColumn = Object.hasOwn(COLUMNS, sort) ? COLUMNS[sort] : 'id'; // ORDER BY can't be a parameter, so only known columns
   const direction = order === 'desc' ? 'DESC' : 'ASC';
 
   const { rows } = await db.query(
@@ -103,8 +92,7 @@ export async function createVehicle(input) {
 
 export async function updateVehicle(id, input) {
   const { columns, values } = writableColumns(input);
-  // $1 is the vehicle id, so the new values start at $2.
-  const assignments = columns.map((column, i) => `${column} = $${i + 2}`);
+  const assignments = columns.map((column, i) => `${column} = $${i + 2}`); // $1 is the id
   const { rows } = await db.query(
     `UPDATE vehicles SET ${[...assignments, 'updated_at = now()'].join(', ')}
      WHERE id = $1 RETURNING ${VEHICLE_FIELDS}`,
@@ -118,7 +106,6 @@ export async function deleteVehicle(id) {
   return rows.length > 0;
 }
 
-// Runs inside the checkout transaction, so it takes that transaction's connection.
 export async function decreaseVehicleStock(id, amount, tx) {
   await tx.query('UPDATE vehicles SET quantity = quantity - $2, updated_at = now() WHERE id = $1', [id, amount]);
 }

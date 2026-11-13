@@ -5,7 +5,6 @@ export async function createSession(tokenHash, userId) {
   await db.query('INSERT INTO sessions (token_hash, user_id) VALUES ($1, $2)', [tokenHash, userId]);
 }
 
-// Returns the user who owns an unexpired session, or null.
 export async function getUserBySession(tokenHash) {
   const { rows } = await db.query(
     `SELECT ${USER_FIELDS} FROM users JOIN sessions ON sessions.user_id = users.id

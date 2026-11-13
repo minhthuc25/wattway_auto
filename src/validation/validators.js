@@ -1,10 +1,7 @@
-// Checks on request input, used by the routes. Each validate function returns an error message, or null if the input is valid.
-
 function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-// `name` is the field the address was sent in.
 function validateShipping(shipping, name) {
   if (!isObject(shipping)) return `Missing required field: ${name}`;
 
@@ -14,8 +11,6 @@ function validateShipping(shipping, name) {
 
   return null;
 }
-
-// Users and sessions
 
 export function validateRegistration(body) {
   if (!isObject(body)) return 'Request body must be a JSON object';
@@ -28,8 +23,7 @@ export function validateRegistration(body) {
   }
   if (body.password.length < 8) return 'password must be at least 8 characters';
 
-  // The default address is optional, but must be complete if it is given.
-  if (body.defaultShipping !== undefined) return validateShipping(body.defaultShipping, 'defaultShipping');
+  if (body.defaultShipping !== undefined) return validateShipping(body.defaultShipping, 'defaultShipping'); // optional, but must be complete
 
   return null;
 }
@@ -49,8 +43,6 @@ export function validateLogin(body) {
   return null;
 }
 
-// Vehicles
-
 export function validateListing({ condition, available, year, hasAccidents, sort, order }) {
   if (condition !== undefined && !['new', 'used'].includes(condition)) return 'condition must be "new" or "used"';
   if (available !== undefined && !['true', 'false'].includes(available)) return 'available must be "true" or "false"';
@@ -65,8 +57,7 @@ export function validateListing({ condition, available, year, hasAccidents, sort
 export function validateVehicle(body, creating) {
   if (!isObject(body)) return 'Request body must be a JSON object';
 
-  // rangeKm and batteryKwh are required because the savings calculator uses them.
-  const required = ['make', 'model', 'year', 'price', 'rangeKm', 'batteryKwh'];
+  const required = ['make', 'model', 'year', 'price', 'rangeKm', 'batteryKwh']; // range + battery feed the savings calculator
   if (creating) {
     for (const field of required) {
       if (body[field] === undefined || body[field] === null || body[field] === '') {
@@ -103,15 +94,12 @@ export function validateReview(body) {
   return null;
 }
 
-// Test drives
-
 export function validateTestDrive(body) {
   if (!isObject(body)) return 'Request body must be a JSON object';
   if (!Number.isInteger(body.vehicleId) || body.vehicleId <= 0) return 'vehicleId must be a positive integer';
   if (!['at_home', 'virtual'].includes(body.type)) return 'type must be "at_home" or "virtual"';
 
-  // The time zone is required so the time means the same thing wherever the customer is.
-  const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/;
+  const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/; // time zone required
   if (typeof body.scheduledAt !== 'string' || !iso.test(body.scheduledAt) || Number.isNaN(Date.parse(body.scheduledAt))) {
     return 'scheduledAt must be a date and time with a time zone, e.g. 2026-12-01T15:00:00-05:00';
   }
@@ -132,8 +120,6 @@ export function validateTestDriveUpdate(body) {
 
   return null;
 }
-
-// Calculators
 
 export function validateSavings(query) {
   if (query.kmPerYear === undefined || query.kmPerYear === '') return 'Missing required parameter: kmPerYear';
@@ -159,30 +145,25 @@ export function validateLoan(query) {
 
   if (price <= 0) return 'price must be greater than 0';
   if (downPayment < 0 || downPayment >= price) return 'downPayment must be at least 0 and less than price';
-  // The upper limits on rate and months keep (1 + rate)^months from growing too large to calculate.
-  if (rate < 0 || rate > 100) return 'rate must be a yearly percentage from 0 to 100';
+  if (rate < 0 || rate > 100) return 'rate must be a yearly percentage from 0 to 100'; // caps stop (1 + r)^n overflowing
   if (!Number.isInteger(months) || months < 1 || months > 120) return 'months must be a whole number from 1 to 120';
 
   return null;
 }
 
-// Cart and orders
-
 export function validateCartItem(body, creating) {
   if (!isObject(body)) return 'Request body must be a JSON object';
   if (creating && (!Number.isInteger(body.vehicleId) || body.vehicleId <= 0)) return 'vehicleId must be a positive integer';
 
-  // When adding to the cart, quantity is optional and defaults to 1.
-  if (creating && body.quantity === undefined) return null;
+  if (creating && body.quantity === undefined) return null; // defaults to 1 when adding
   if (!Number.isInteger(body.quantity) || body.quantity <= 0) return 'quantity must be a positive integer';
 
   return null;
 }
 
-// A card is valid through the last day of its expiry month, given as MM/YY.
 function isExpired(expiry) {
   const [month, year] = expiry.split('/').map(Number);
-  const firstDayAfterExpiry = new Date(2000 + year, month);
+  const firstDayAfterExpiry = new Date(2000 + year, month); // month is 0-based here, so this is the 1st of the next month
   return firstDayAfterExpiry <= new Date();
 }
 

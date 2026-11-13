@@ -1,24 +1,22 @@
-// Assumptions for the savings calculator. A request can override each of these.
 const SAVINGS_DEFAULTS = {
-  gasCarLPer100Km: 8.5,          // fuel use of a typical gas car, litres per 100 km
-  gasPricePerL: 1.55,            // dollars per litre
-  electricityPricePerKwh: 0.13,  // dollars per kWh, charging at home
+  gasCarLPer100Km: 8.5,
+  gasPricePerL: 1.55,
+  electricityPricePerKwh: 0.13,
 };
 
-const CO2_KG_PER_L_GAS = 2.31;     // CO2 from burning one litre of gasoline
-const GRID_CO2_KG_PER_KWH = 0.03;  // CO2 per kWh (from Ontario's electricity grid)
+const CO2_KG_PER_L_GAS = 2.31;
+const GRID_CO2_KG_PER_KWH = 0.03; // Ontario grid
 
 function round(value, decimals) {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
 }
 
-// Monthly payment for borrowing (price - downPayment) at a yearly interest rate in percent.
 export function calculateLoan({ price, downPayment, rate, months }) {
   const loanAmount = price - downPayment;
   const monthlyRate = rate / 100 / 12;
 
-  // Loan formula: P * r * (1 + r)^n / ((1 + r)^n - 1).
+  // P * r * (1 + r)^n / ((1 + r)^n - 1), or just P / n at 0%
   const monthlyPayment =
     monthlyRate === 0
       ? loanAmount / months
@@ -31,8 +29,6 @@ export function calculateLoan({ price, downPayment, rate, months }) {
   };
 }
 
-// Yearly energy cost and CO2 of driving this EV, compared with a gas car driven the same distance.
-// The EV's efficiency is derived from its battery size and range, so no extra vehicle data is needed.
 export function calculateSavings(
   vehicle,
   {

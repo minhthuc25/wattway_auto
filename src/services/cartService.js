@@ -1,7 +1,6 @@
 import { getVehicle } from '../storage/vehicleStore.js';
 import { listCartItems, getCartItemQuantity, setCartItem } from '../storage/cartStore.js';
 
-// Returns the cart's items with their vehicle details, plus the totals.
 export async function getCart(userId) {
   const cartItems = await listCartItems(userId);
   const items = await Promise.all(
@@ -18,7 +17,6 @@ export async function getCart(userId) {
   };
 }
 
-// Adds to the quantity already in the cart. Returns null, or the reason it could not be done.
 export async function addCartItem(userId, vehicleId, quantity) {
   const vehicle = await getVehicle(vehicleId);
   if (!vehicle) return 'vehicle_not_found';
@@ -30,10 +28,8 @@ export async function addCartItem(userId, vehicleId, quantity) {
   return null;
 }
 
-// Replaces the quantity of a vehicle in the cart. Returns null, or the reason it could not be done.
 export async function changeCartItemQuantity(userId, vehicleId, quantity) {
-  const current = await getCartItemQuantity(userId, vehicleId);
-  if (current === null) return 'item_not_found';
+  if ((await getCartItemQuantity(userId, vehicleId)) === null) return 'item_not_found';
 
   const vehicle = await getVehicle(vehicleId);
   if (quantity > vehicle.quantity) return 'insufficient_stock';

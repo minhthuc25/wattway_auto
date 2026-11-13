@@ -3,7 +3,6 @@ import { SHIPPING_OBJECT, shippingValues } from './userStore.js';
 
 const ORDER_FIELDS = `id, status, total, created_at AS "createdAt", ${SHIPPING_OBJECT} AS shipping`;
 
-// Adds an order's items, with the vehicle details and prices saved when it was placed.
 async function withItems(order, tx) {
   const { rows } = await tx.query(
     `SELECT vehicle_id AS "vehicleId", make, model, year, condition, trim, color, mileage_km AS "mileageKm",
@@ -21,19 +20,16 @@ async function withItems(order, tx) {
   return { ...order, items };
 }
 
-// Returns the user's orders, newest first.
 export async function listOrders(userId) {
   const { rows } = await db.query(`SELECT ${ORDER_FIELDS} FROM orders WHERE user_id = $1 ORDER BY id DESC`, [userId]);
   return Promise.all(rows.map((order) => withItems(order, db)));
 }
 
-// Returns an order only if it belongs to this user, otherwise null.
 export async function getOrder(userId, orderId, tx = db) {
   const { rows } = await tx.query(`SELECT ${ORDER_FIELDS} FROM orders WHERE user_id = $1 AND id = $2`, [userId, orderId]);
   return rows[0] ? withItems(rows[0], tx) : null;
 }
 
-// Returns whether the user has a successfully paid order that includes this vehicle.
 export async function hasPurchasedVehicle(userId, vehicleId) {
   const { rows } = await db.query(
     `SELECT EXISTS (
@@ -45,7 +41,6 @@ export async function hasPurchasedVehicle(userId, vehicleId) {
   return rows[0].purchased;
 }
 
-// createOrder and addOrderItem run inside the checkout transaction, so they take its connection.
 export async function createOrder(userId, status, total, shipping, tx) {
   const { rows } = await tx.query(
     `INSERT INTO orders (user_id, status, total, shipping_street, shipping_city, shipping_province, shipping_country, shipping_postal_code)

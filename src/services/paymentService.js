@@ -1,8 +1,6 @@
-// Mock payment every third request is denied.
-// The count is kept in memory, so it starts again when the server restarts.
-let requestCount = 0;
+let requestCount = 0; // in memory, so it resets when the server restarts
 
-// A real payment provider would charge this card; the mock only counts requests.
+// mock: the card is never charged, every third request is denied
 export function authorizePayment(card) {
   requestCount += 1;
   return requestCount % 3 !== 0;

@@ -1,4 +1,4 @@
--- Sample data loaded on the server's first start.
+-- Sample data loaded on the server's first start
 
 INSERT INTO users (username, password_hash, first_name, last_name, role)
 VALUES ('admin',
