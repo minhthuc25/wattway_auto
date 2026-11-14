@@ -36,6 +36,12 @@ CREATE TABLE IF NOT EXISTS users (
   created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shipping_street TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shipping_city TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shipping_province TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shipping_country TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shipping_postal_code TEXT;
+
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
   user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
