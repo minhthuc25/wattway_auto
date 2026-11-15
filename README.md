@@ -266,7 +266,7 @@ Check out:
 curl -X POST http://localhost:3000/api/orders \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"shipping":{"street":"4700 Keele St","city":"Toronto","province":"ON","country":"Canada","postalCode":"M3J 1P3"},"card":{"number":"4111111111111111","expiry":"12/30","cvv":"123"}}'
+  -d '{"shipping":{"street":"123 Example St","city":"Toronto","province":"ON","country":"Canada","postalCode":"A1B 2C3"},"card":{"number":"4111111111111111","expiry":"12/30","cvv":"123"}}'
 ```
 
 List your orders:
@@ -282,7 +282,7 @@ Book a test drive:
 curl -X POST http://localhost:3000/api/test-drives \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"vehicleId":3,"type":"at_home","scheduledAt":"2030-12-01T15:00:00-05:00","address":"4700 Keele St, Toronto"}'
+  -d '{"vehicleId":3,"type":"at_home","scheduledAt":"2030-12-01T15:00:00-05:00","address":"123 Example St, Toronto"}'
 ```
 
 Cancel a test drive (replace `1` with an actual ID):
