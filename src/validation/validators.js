@@ -151,6 +151,13 @@ export function validateLoan(query) {
   return null;
 }
 
+export function validateSalesReport({ year }) {
+  if (year === undefined || year === '') return 'Missing required parameter: year';
+  if (!Number.isInteger(Number(year))) return 'year must be an integer';
+
+  return null;
+}
+
 export function validateCartItem(body, creating) {
   if (!isObject(body)) return 'Request body must be a JSON object';
   if (creating && (!Number.isInteger(body.vehicleId) || body.vehicleId <= 0)) return 'vehicleId must be a positive integer';

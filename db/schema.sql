@@ -101,3 +101,10 @@ CREATE TABLE IF NOT EXISTS test_drives (
 
 -- A vehicle can only have one test drive per time slot. Cancelling a test drive frees its slot.
 CREATE UNIQUE INDEX IF NOT EXISTS test_drives_one_per_slot ON test_drives (vehicle_id, scheduled_at) WHERE status = 'SCHEDULED';
+
+CREATE TABLE IF NOT EXISTS visit_events (
+  ip_address TEXT NOT NULL,
+  vehicle_id INTEGER NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('VIEW', 'CART', 'PURCHASE')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

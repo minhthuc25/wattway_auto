@@ -41,6 +41,20 @@ export async function hasPurchasedVehicle(userId, vehicleId) {
   return rows[0].purchased;
 }
 
+export async function getSalesReport(year) {
+  const { rows } = await db.query(
+    `SELECT EXTRACT(MONTH FROM orders.created_at AT TIME ZONE 'America/Toronto')::int AS month,
+            vehicle_id AS "vehicleId", make, model, year,
+            SUM(quantity)::int AS quantity, SUM(quantity * unit_price)::int AS revenue
+     FROM orders JOIN order_items ON order_items.order_id = orders.id
+     WHERE orders.status = 'PROCESSED' AND EXTRACT(YEAR FROM orders.created_at AT TIME ZONE 'America/Toronto') = $1
+     GROUP BY month, vehicle_id, make, model, year
+     ORDER BY month, quantity DESC, vehicle_id`,
+    [year]
+  );
+  return rows;
+}
+
 export async function createOrder(userId, status, total, shipping, tx) {
   const { rows } = await tx.query(
     `INSERT INTO orders (user_id, status, total, shipping_street, shipping_city, shipping_province, shipping_country, shipping_postal_code)

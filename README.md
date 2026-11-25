@@ -54,6 +54,8 @@ npm run db:reset
 | POST | `/api/vehicles` | Admin | Add a vehicle |
 | PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
 | DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
+| GET | `/api/analytics/sales?year=value` | Admin | Vehicles sold each month of a year |
+| GET | `/api/analytics/usage` | Admin | Views, cart additions and purchases per vehicle |
 
 ### Parameters for User Accounts
 
@@ -161,6 +163,18 @@ A verified owner is someone with a `PROCESSED` order that includes the vehicle. 
 | `comment` | Optional text |
 
 `GET` returns `reviews`, `reviewCount` and `averageRating`.
+
+### Parameters for Analytics Reports
+
+Viewing a vehicle records a `VIEW`, adding it to a cart records a `CART`, and buying it records a `PURCHASE`.
+
+| Parameter | Values |
+|---|---|
+| `year` | Year of the sales report, e.g. `2026`, required |
+
+The sales report returns the `quantity` sold and `revenue` for each vehicle by `month`. Denied orders are not counted.
+
+The usage report returns the `views`, `cartAdds`, `purchases` and `visitors` (different IP addresses) for each vehicle.
 
 ## Authentication
 

@@ -3,6 +3,7 @@ import { requireLogin } from '../middleware/auth.js';
 import { parseId } from '../middleware/parseId.js';
 import { getCart, addCartItem, changeCartItemQuantity } from '../services/cartService.js';
 import { deleteCartItem, deleteCartItems } from '../storage/cartStore.js';
+import { recordVisitEvent } from '../storage/visitEventStore.js';
 import { validateCartItem } from '../validation/validators.js';
 
 const router = Router();
@@ -22,6 +23,8 @@ router.post('/items', async (req, res) => {
   const problem = await addCartItem(req.user.id, vehicleId, quantity);
   if (problem === 'vehicle_not_found') return res.status(404).json({ error: 'Vehicle not found' });
   if (problem === 'insufficient_stock') return res.status(409).json({ error: 'Requested quantity exceeds available stock' });
+
+  await recordVisitEvent(req.ip, vehicleId, 'CART');
   res.json({ data: await getCart(req.user.id) });
 });
 

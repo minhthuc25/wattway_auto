@@ -9,7 +9,7 @@ const DB_DIR = path.resolve(__dirname, '../../db');
 
 export const db = process.env.DATABASE_URL
   ? new pg.Pool({ connectionString: process.env.DATABASE_URL })
-  : new PGlite(path.join(DB_DIR, 'pgdata'));
+  : new PGlite(path.join(DB_DIR, 'pgdata')); // Env variable DATABASE_URL used when deploying to Neon
 
 if (process.env.DATABASE_URL) { // give the pg pool the same exec/transaction calls as PGlite
   db.exec = (sql) => db.query(sql);

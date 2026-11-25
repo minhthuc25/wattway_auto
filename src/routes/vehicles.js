@@ -4,6 +4,7 @@ import { parseId } from '../middleware/parseId.js';
 import { calculateSavings } from '../services/calculatorService.js';
 import { getVehicleReviews, addVehicleReview } from '../services/reviewService.js';
 import { listVehicles, getVehicle, createVehicle, updateVehicle, deleteVehicle } from '../storage/vehicleStore.js';
+import { recordVisitEvent } from '../storage/visitEventStore.js';
 import { validateListing, validateSavings, validateReview, validateVehicle } from '../validation/validators.js';
 
 const router = Router();
@@ -21,6 +22,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const vehicle = await getVehicle(req.params.id);
   if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
+
+  await recordVisitEvent(req.ip, vehicle.id, 'VIEW');
   res.json({ data: vehicle });
 });
 

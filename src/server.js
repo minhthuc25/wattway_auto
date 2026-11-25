@@ -6,10 +6,12 @@ import loanRoutes from './routes/loan.js';
 import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/orders.js';
 import testDriveRoutes from './routes/testDrives.js';
+import analyticsRoutes from './routes/analytics.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Env variable PORT used when deploying to Render
 
+app.set('trust proxy', true); // req.ip is the visitor's address, not Render's or Vercel's proxy
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
@@ -23,6 +25,7 @@ app.use('/api/loan', loanRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/test-drives', testDriveRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });

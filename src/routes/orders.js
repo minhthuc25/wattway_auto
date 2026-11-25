@@ -3,6 +3,7 @@ import { requireLogin } from '../middleware/auth.js';
 import { parseId } from '../middleware/parseId.js';
 import { checkoutCart } from '../services/orderService.js';
 import { listOrders, getOrder } from '../storage/orderStore.js';
+import { recordVisitEvent } from '../storage/visitEventStore.js';
 import { validateCheckout } from '../validation/validators.js';
 
 const router = Router();
@@ -18,6 +19,8 @@ router.post('/', async (req, res) => {
   if (problem === 'empty_cart') return res.status(409).json({ error: 'Cart is empty' });
   if (problem === 'insufficient_stock') return res.status(409).json({ error: 'Cart quantity exceeds available stock', vehicleId, available });
   if (order.status === 'DENIED') return res.status(402).json({ error: 'Credit Card Authorization Failed' });
+
+  for (const item of order.items) await recordVisitEvent(req.ip, item.vehicleId, 'PURCHASE');
   res.status(201).json({ message: 'Order Successfully Completed', data: order });
 });
 
