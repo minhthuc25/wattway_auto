@@ -34,10 +34,10 @@ All are optional (the API runs locally without any of them).
 | `GEMINI_API_KEY` | Google AI Studio key for the chatbot | The chatbot returns `503` while everything else works |
 | `PORT` | Port the server listens on | `3000` |
 
-To set them when starting the server:
+To set them before starting the server:
 
 ```bash
-GEMINI_API_KEY='<your key>' npm run dev
+GEMINI_API_KEY='<your key>'
 ```
 
 ## Endpoints
