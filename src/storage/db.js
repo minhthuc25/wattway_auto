@@ -2,11 +2,32 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import pg from 'pg';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_DIR = path.resolve(__dirname, '../../db');
 
-export const db = new PGlite(path.join(DB_DIR, 'pgdata'));
+export const db = process.env.DATABASE_URL
+  ? new pg.Pool({ connectionString: process.env.DATABASE_URL })
+  : new PGlite(path.join(DB_DIR, 'pgdata'));
+
+if (process.env.DATABASE_URL) { // give the pg pool the same exec/transaction calls as PGlite
+  db.exec = (sql) => db.query(sql);
+  db.transaction = async (callback) => {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await callback(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  };
+}
 
 const { rows } = await db.query(`SELECT to_regclass('vehicles') AS existing`);
 const schema = await readFile(path.join(DB_DIR, 'schema.sql'), 'utf8');
@@ -15,5 +36,5 @@ if (!rows[0].existing) {
   await db.exec(`${schema}\n${seed}`);
   console.log('Database created and seeded');
 } else {
-  await db.exec(schema); // IF NOT EXISTS: only adds tables that are missing
+  await db.exec(schema);
 }
