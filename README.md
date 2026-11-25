@@ -1,6 +1,6 @@
-# York University - EECS 4413 - Group G - Inventory API
+# York University - EECS 4413 - Group G - WattWay Auto API
 
-A small Express.js REST API for an electric-vehicle inventory. Data is stored in PostgreSQL using PGlite.
+The back end of WattWay Auto, an online store for new and used electric vehicles. It is an Express.js REST API. Data is stored using PostgreSQL in an embedded PGlite database or a hosted database.
 
 ## Requirements
 
@@ -24,6 +24,22 @@ To go back to the original sample data, or after a change to an existing table, 
 npm run db:reset
 ```
 
+## Environment variables
+
+All are optional (the API runs locally without any of them).
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `DATABASE_URL` | Connection string of a hosted PostgreSQL database, e.g. Neon | Uses local database in `db/pgdata` |
+| `GEMINI_API_KEY` | Google AI Studio key for the chatbot | The chatbot returns `503` while everything else works |
+| `PORT` | Port the server listens on | `3000` |
+
+To set them when starting the server:
+
+```bash
+GEMINI_API_KEY='<your key>' npm run dev
+```
+
 ## Endpoints
 
 | Method | Endpoint | Access | Purpose |
@@ -36,9 +52,11 @@ npm run db:reset
 | DELETE | `/api/sessions/current` | Logged in | Log out |
 | GET | `/api/vehicles?param=value` | Public | List vehicles, optionally filtered and sorted |
 | GET | `/api/vehicles/:id` | Public | Get one vehicle |
+| POST | `/api/vehicles` | Admin | Add a vehicle |
+| PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
+| DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
 | GET | `/api/vehicles/:id/savings?kmPerYear=value` | Public | Yearly cost and CO2 savings compared with a gas car |
 | GET | `/api/vehicles/:id/reviews` | Public | Get a vehicle's reviews and average ratings |
-| GET | `/api/loan?price=&downPayment=&rate=&months=` | Public | Monthly payment estimate for a loan |
 | POST | `/api/vehicles/:id/reviews` | Verified owner | Review a vehicle you have purchased |
 | GET | `/api/cart` | Logged in | Get your cart |
 | POST | `/api/cart/items` | Logged in | Add a vehicle to your cart |
@@ -51,9 +69,8 @@ npm run db:reset
 | POST | `/api/test-drives` | Logged in | Book a test drive |
 | GET | `/api/test-drives` | Logged in | List your test drives, soonest first (admins see all) |
 | PATCH | `/api/test-drives/:id` | Logged in | Cancel your test drive (admins can cancel any) |
-| POST | `/api/vehicles` | Admin | Add a vehicle |
-| PATCH | `/api/vehicles/:id` | Admin | Update some fields on a vehicle |
-| DELETE | `/api/vehicles/:id` | Admin | Delete a vehicle |
+| GET | `/api/loan?price=&downPayment=&rate=&months=` | Public | Monthly payment estimate for a loan |
+| POST | `/api/chat` | Public | Ask the chatbot a question |
 | GET | `/api/analytics/sales?year=value` | Admin | Vehicles sold each month of a year |
 | GET | `/api/analytics/usage` | Admin | Views, cart additions and purchases per vehicle |
 
@@ -84,6 +101,24 @@ All parameters are optional and can be combined, e.g. `/api/vehicles?condition=u
 | `sort` | `price`, `mileageKm` | Sort by this field |
 | `order` | `asc`, `desc` | Sort direction |
 
+### Parameters for Vehicles
+
+Adding a vehicle requires `make`, `model`, `year`, `price`, `rangeKm` and `batteryKwh`. Updating changes only the fields given. Other fields are ignored, and `available` comes from `quantity`, so it cannot be set.
+
+| Parameter | Values |
+|---|---|
+| `make`, `model` | Text |
+| `year` | Model year |
+| `price` | Whole dollars |
+| `rangeKm` | Range in km, a whole number |
+| `batteryKwh` | Battery capacity in kWh |
+| `condition` | `new` or `used` (default `new`) |
+| `bodyType` | e.g. `sedan`, `suv`, `hatchback`, `truck` |
+| `mileageKm` | Whole km (default `0`) |
+| `hasAccidents` | `true` or `false` (default `false`) |
+| `quantity` | Units in stock (default `1`) |
+| `trim`, `color`, `historyReport`, `description`, `imageUrl` | Text |
+
 ### Parameters for Savings Calculator
 
 Compares driving the vehicle with driving a gas car the same distance.
@@ -97,18 +132,16 @@ Compares driving the vehicle with driving a gas car the same distance.
 
 Returns the yearly energy cost, fuel cost, cost savings and CO2 (kg) for both.
 
-### Parameters for Loan Calculator
+### Parameters for Reviews
 
-All four are required, e.g. `/api/loan?price=80000&downPayment=20000&rate=6&months=60`.
+A verified owner is someone with a `PROCESSED` order that includes the vehicle. Anyone else gets `403`. Each user can review a vehicle once; a second review gets `409`.
 
 | Parameter | Values |
 |---|---|
-| `price` | Vehicle price in dollars, greater than 0 |
-| `downPayment` | Dollars, at least 0 and less than `price` |
-| `rate` | Yearly interest rate in percent, (e.g. `6` for 6%) |
-| `months` | Loan duration, a whole number from 1 to 120 |
+| `rating` | Stars, a whole number from 1 to 5, required |
+| `comment` | Optional text |
 
-Returns `loanAmount`, `monthlyPayment` and `totalInterest`.
+`GET` returns `reviews`, `reviewCount` and `averageRating`.
 
 ### Parameters for Shopping Cart
 
@@ -121,7 +154,7 @@ Each user has their own cart. A vehicle in a cart does not reserve stock.
 
 Returns `items`, `itemCount` and `total`. A quantity above the available stock returns `409`.
 
-### Checkout
+### Parameters for Checkout
 
 `POST /api/orders` needs a `shipping` object and a `card` object, all fields required. The shipping address is saved on the order; the card is never stored.
 
@@ -153,16 +186,28 @@ Test drives are booked in one-hour slots, and each vehicle can have one test dri
 
 To cancel, send `PATCH` with `{ "status": "CANCELLED" }`.
 
-### Parameters for Reviews
+### Parameters for Loan Calculator
 
-A verified owner is someone with a `PROCESSED` order that includes the vehicle. Anyone else gets `403`. Each user can review a vehicle once; a second review gets `409`.
+All four are required, e.g. `/api/loan?price=80000&downPayment=20000&rate=6&months=60`.
 
 | Parameter | Values |
 |---|---|
-| `rating` | Stars, a whole number from 1 to 5, required |
-| `comment` | Optional text |
+| `price` | Vehicle price in dollars, greater than 0 |
+| `downPayment` | Dollars, at least 0 and less than `price` |
+| `rate` | Yearly interest rate in percent, (e.g. `6` for 6%) |
+| `months` | Loan duration, a whole number from 1 to 120 |
 
-`GET` returns `reviews`, `reviewCount` and `averageRating`.
+Returns `loanAmount`, `monthlyPayment` and `totalInterest`.
+
+### Parameters for Chatbot
+
+The chatbot knows the current inventory and links to vehicles as `/vehicles/:id`. Each message is answered on its own.
+
+| Parameter | Values |
+|---|---|
+| `message` | The question, at most 500 characters, required |
+
+The reply is in `data.reply`. If the chatbot can't be reached, the response is `502`.
 
 ### Parameters for Analytics Reports
 
@@ -196,20 +241,6 @@ New registrations are always customer accounts.
 
 ## Example requests
 
-List inventory:
-
-```bash
-curl http://localhost:3000/api/vehicles
-```
-
-Register:
-
-```bash
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"jsmith","password":"correct-horse","firstName":"John","lastName":"Smith"}'
-```
-
 Log in as the admin (the response contains `data.token`):
 
 ```bash
@@ -224,29 +255,10 @@ Save the token for the requests below:
 TOKEN=paste-the-token-here
 ```
 
-Create a vehicle:
+List used vehicles without accidents, lowest mileage first:
 
 ```bash
-curl -X POST http://localhost:3000/api/vehicles \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"make":"Kia","model":"EV6","year":2025,"price":52000,"condition":"new","bodyType":"suv","rangeKm":480,"batteryKwh":84,"quantity":3}'
-```
-
-Update a vehicle (replace `1` with an actual ID):
-
-```bash
-curl -X PATCH http://localhost:3000/api/vehicles/1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"price":46990,"quantity":0}'
-```
-
-Delete a vehicle:
-
-```bash
-curl -X DELETE http://localhost:3000/api/vehicles/1 \
-  -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:3000/api/vehicles?condition=used&hasAccidents=false&sort=mileageKm"
 ```
 
 Add a vehicle to your cart:
@@ -258,22 +270,6 @@ curl -X POST http://localhost:3000/api/cart/items \
   -d '{"vehicleId":2,"quantity":1}'
 ```
 
-Get your cart:
-
-```bash
-curl http://localhost:3000/api/cart \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-Change the quantity of a vehicle in your cart:
-
-```bash
-curl -X PATCH http://localhost:3000/api/cart/items/2 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"quantity":2}'
-```
-
 Check out:
 
 ```bash
@@ -283,64 +279,8 @@ curl -X POST http://localhost:3000/api/orders \
   -d '{"shipping":{"street":"123 Example St","city":"Toronto","province":"ON","country":"Canada","postalCode":"A1B 2C3"},"card":{"number":"4111111111111111","expiry":"12/30","cvv":"123"}}'
 ```
 
-List your orders:
-
-```bash
-curl http://localhost:3000/api/orders \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-Book a test drive:
-
-```bash
-curl -X POST http://localhost:3000/api/test-drives \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"vehicleId":3,"type":"at_home","scheduledAt":"2030-12-01T15:00:00-05:00","address":"123 Example St, Toronto"}'
-```
-
-Cancel a test drive (replace `1` with an actual ID):
-
-```bash
-curl -X PATCH http://localhost:3000/api/test-drives/1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"CANCELLED"}'
-```
-
-Review a vehicle you have purchased:
-
-```bash
-curl -X POST http://localhost:3000/api/vehicles/2/reviews \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"rating":5,"comment":"Great daily driver."}'
-```
-
-Get a vehicle's reviews:
-
-```bash
-curl http://localhost:3000/api/vehicles/2/reviews
-```
-
-Log out:
-
-```bash
-curl -X DELETE http://localhost:3000/api/sessions/current \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-## Vehicle fields
-
-Required on create: `make`, `model`, `year`, `price` (whole dollars), `rangeKm`, `batteryKwh`.
-
-Optional: `condition` (`new` or `used`, default `new`), `trim`, `color`, `bodyType` (e.g. `sedan`, `suv`, `hatchback`, `truck`), `mileageKm` (default `0`), `hasAccidents` (default `false`), `historyReport`, `quantity` (units in stock, default `1`), `description`, `imageUrl`.
-
-Fields not listed here are ignored.
-
 ## Notes
 
 - The database schema is in `db/schema.sql` and the sample data in `db/seed.sql`.
 - All queries use parameters (`$1`, `$2`, …) rather than inserting request values into SQL text, which protects against SQL injection.
 - Passwords are stored as salted scrypt hashes, and session tokens as SHA-256 hashes.
-- Run the server behind HTTPS when it is deployed, so passwords and tokens are not sent in plain text.

@@ -151,6 +151,14 @@ export function validateLoan(query) {
   return null;
 }
 
+export function validateChat(body) {
+  if (!isObject(body)) return 'Request body must be a JSON object';
+  if (typeof body.message !== 'string' || !body.message.trim()) return 'Missing required field: message';
+  if (body.message.length > 500) return 'message must be at most 500 characters'; // protects the free Gemini quota
+
+  return null;
+}
+
 export function validateSalesReport({ year }) {
   if (year === undefined || year === '') return 'Missing required parameter: year';
   if (!Number.isInteger(Number(year))) return 'year must be an integer';
