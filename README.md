@@ -96,14 +96,14 @@ All parameters are optional and can be combined, e.g. `/api/vehicles?condition=u
 | `condition` | `new`, `used` | Condition |
 | `available` | `true`, `false` | In stock (`quantity` > 0) or not |
 | `year` | e.g. `2024` | Exact model year |
-| `bodyType` | e.g. `suv`, `sedan` | Exact body type, not case-sensitive |
+| `bodyType` | `sedan`, `suv`, `hatchback`, `truck` | Body type, not case-sensitive |
 | `hasAccidents` | `true`, `false` | With or without reported accidents |
 | `sort` | `price`, `mileageKm` | Sort by this field |
 | `order` | `asc`, `desc` | Sort direction |
 
 ### Parameters for Vehicles
 
-Adding a vehicle requires `make`, `model`, `year`, `price`, `rangeKm` and `batteryKwh`. Updating changes only the fields given. Other fields are ignored, and `available` comes from `quantity`, so it cannot be set.
+Adding a vehicle requires `make`, `model`, `year`, `price`, `bodyType`, `rangeKm` and `batteryKwh`. Updating changes only the fields given. Other fields are ignored, and `available` comes from `quantity`, so it cannot be set.
 
 | Parameter | Values |
 |---|---|
@@ -113,7 +113,7 @@ Adding a vehicle requires `make`, `model`, `year`, `price`, `rangeKm` and `batte
 | `rangeKm` | Range in km, a whole number |
 | `batteryKwh` | Battery capacity in kWh |
 | `condition` | `new` or `used` (default `new`) |
-| `bodyType` | e.g. `sedan`, `suv`, `hatchback`, `truck` |
+| `bodyType` | `sedan`, `suv`, `hatchback` or `truck` |
 | `mileageKm` | Whole km (default `0`) |
 | `hasAccidents` | `true` or `false` (default `false`) |
 | `quantity` | Units in stock (default `1`) |

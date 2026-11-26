@@ -57,7 +57,7 @@ export function validateListing({ condition, available, year, hasAccidents, sort
 export function validateVehicle(body, creating) {
   if (!isObject(body)) return 'Request body must be a JSON object';
 
-  const required = ['make', 'model', 'year', 'price', 'rangeKm', 'batteryKwh']; // range + battery feed the savings calculator
+  const required = ['make', 'model', 'year', 'price', 'bodyType', 'rangeKm', 'batteryKwh']; // range + battery feed the savings calculator
   if (creating) {
     for (const field of required) {
       if (body[field] === undefined || body[field] === null || body[field] === '') {
@@ -75,11 +75,14 @@ export function validateVehicle(body, creating) {
   if (body.mileageKm !== undefined && (!Number.isInteger(body.mileageKm) || body.mileageKm < 0)) return 'mileageKm must be a non-negative integer';
   if (body.quantity !== undefined && (!Number.isInteger(body.quantity) || body.quantity < 0)) return 'quantity must be a non-negative integer';
   if (body.hasAccidents !== undefined && typeof body.hasAccidents !== 'boolean') return 'hasAccidents must be a boolean';
-  for (const field of ['trim', 'color', 'bodyType', 'historyReport', 'description', 'imageUrl']) {
+  for (const field of ['trim', 'color', 'historyReport', 'description', 'imageUrl']) {
     if (body[field] !== undefined && typeof body[field] !== 'string') return `${field} must be a string`;
   }
   if (body.available !== undefined) return 'available is derived from quantity and cannot be set';
   if (body.condition !== undefined && !['new', 'used'].includes(body.condition)) return 'condition must be "new" or "used"';
+  if (body.bodyType !== undefined && !['sedan', 'suv', 'hatchback', 'truck'].includes(body.bodyType)) {
+    return 'bodyType must be "sedan", "suv", "hatchback" or "truck"';
+  }
 
   return null;
 }
