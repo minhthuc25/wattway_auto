@@ -157,7 +157,18 @@ export function validateLoan(query) {
 export function validateChat(body) {
   if (!isObject(body)) return 'Request body must be a JSON object';
   if (typeof body.message !== 'string' || !body.message.trim()) return 'Missing required field: message';
-  if (body.message.length > 500) return 'message must be at most 500 characters'; // protects the free Gemini quota
+  if (body.message.length > 300) return 'message must be at most 300 characters'; // protects the free Gemini quota
+
+  if (body.history !== undefined) { // optional earlier messages, so follow-up questions make sense
+    if (!Array.isArray(body.history) || body.history.length > 10) return 'history must be a list of at most 10 messages';
+    for (const item of body.history) {
+      if (!isObject(item) || !['user', 'bot'].includes(item.from)) return 'each history item must have from: "user" or "bot"';
+      const maxLength = item.from === 'user' ? 300 : 3000; // questions have the same limit as message; answers are longer
+      if (typeof item.text !== 'string' || !item.text.trim() || item.text.length > maxLength) {
+        return `each ${item.from} history item must have text of at most ${maxLength} characters`;
+      }
+    }
+  }
 
   return null;
 }

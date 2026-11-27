@@ -201,11 +201,12 @@ Returns `loanAmount`, `monthlyPayment` and `totalInterest`.
 
 ### Parameters for Chatbot
 
-The chatbot knows the current inventory and links to vehicles as `/vehicles/:id`. Each message is answered on its own.
+The chatbot knows the current inventory and the website's pages, and links to them in its responses. Sending the earlier messages as `history` lets it answer follow-up questions.
 
 | Parameter | Values |
 |---|---|
-| `message` | The question, at most 500 characters, required |
+| `message` | The question, at most 300 characters |
+| `history` | Optional list of up to 10 earlier messages, each `{ "from": "user" or "bot", "text": "..." }`, with at most 300 characters for `user` and 3000 for `bot` |
 
 The reply is in `data.reply`. If the chatbot can't be reached, the response is `502`.
 
@@ -215,7 +216,7 @@ Viewing a vehicle records a `VIEW`, adding it to a cart records a `CART`, and bu
 
 | Parameter | Values |
 |---|---|
-| `year` | Year of the sales report, e.g. `2026`, required |
+| `year` | Year of the sales report, e.g. `2026` |
 
 The sales report returns the `quantity` sold and `revenue` for each vehicle by `month`. Denied orders are not counted.
 
